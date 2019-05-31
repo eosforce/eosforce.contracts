@@ -1,6 +1,7 @@
 #include <eosio.system.hpp>
 #include <eosio/privileged.hpp>
 
+
 namespace eosiosystem {
       ACTION system_contract::transfer( const account_name from, const account_name to, const asset quantity, const string memo ){
          require_auth(from);
@@ -189,7 +190,7 @@ namespace eosiosystem {
             });
          }
 //todo
-//         set_need_check_ram_limit( voter );
+         set_need_check_ram_limit( voter.value );
       }
 
       ACTION system_contract::unfreezeram( const account_name voter, const account_name bpname ){
