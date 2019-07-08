@@ -1,2 +1,2 @@
 # eosforce.contracts
-contracts for eosforce
+System contracts for eosforce
