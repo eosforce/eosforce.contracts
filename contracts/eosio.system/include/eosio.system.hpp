@@ -3,6 +3,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/asset.hpp>
 #include <eosio/crypto.hpp>
+#include <eosio/system.hpp>
 
 #include <string>
 
@@ -83,7 +84,6 @@ namespace eosio {
             bool isactive = false;
 
             uint64_t primary_key() const { return bpname; }
-            void     deactivate()       {isactive = false;}
          };
 
 
@@ -119,9 +119,76 @@ namespace eosio {
          typedef eosio::multi_index< "heartbeat"_n, heartbeat_info > hb_table;
          typedef eosio::multi_index< "blackpro"_n, producer_blacklist > blackproducer_table;
 
-      public:
-         [[eosio::action]]
-         void transfer( const name& from, const name& to, const asset& quantity, const string& memo );
+      private:
+
+
+      void update_elected_bps();
+      void reward_bps( const std::vector<name>& block_producers, const time_point_sec& current_time_sec );
+
+      inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
+         hb_table hb_tbl( _self, _self.value );
+
+         const auto hb_itr = hb_tbl.find( bpname );
+         if( hb_itr == hb_tbl.end() ) {
+            hb_tbl.emplace( name{ bpname }, [&]( heartbeat_info& hb ) {
+               hb.bpname = bpname;
+               hb.timestamp = timestamp;
+            } );
+         } else {
+            hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { 
+               hb.timestamp = timestamp; 
+            } );
+         }
+      }
+
+    public:
+      [[eosio::action]] void transfer( const account_name& from,
+                                       const account_name& to,
+                                       const asset& quantity,
+                                       const string& memo );
+
+      [[eosio::action]] void updatebp( const account_name& bpname,
+                                       const public_key& producer_key,
+                                       const uint32_t commission_rate,
+                                       const std::string& url );
+
+      [[eosio::action]] void vote( const account_name& voter, 
+                                   const account_name& bpname, 
+                                   const asset& stake );
+
+      [[eosio::action]] void revote( const account_name& voter,
+                                     const account_name& frombp,
+                                     const account_name& tobp,
+                                     const asset& restake );
+
+      [[eosio::action]] void unfreeze( const account_name& voter, const account_name& bpname );
+
+      [[eosio::action]] void vote4ram( const account_name& voter, 
+                                       const account_name& bpname, 
+                                       const asset& stake );
+
+      [[eosio::action]] void unfreezeram( const account_name& voter, const account_name& bpname );
+
+      [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
+
+      [[eosio::action]] void onblock( const block_timestamp&,
+                                      const account_name& bpname,
+                                      const uint16_t,
+                                      const checksum256&,
+                                      const checksum256&,
+                                      const checksum256&,
+                                      const uint32_t schedule_version );
+
+      [[eosio::action]] void onfee( const account_name& actor, 
+                                    const asset& fee, 
+                                    const account_name& bpname );
+
+      [[eosio::action]] void setemergency( const account_name& bpname, const bool emergency );
+
+      [[eosio::action]] void heartbeat( const account_name& bpname,
+                                        const time_point_sec& timestamp );
+
+      [[eosio::action]] void removebp( const account_name& producer );
    };
 
 } // namespace eosio
