@@ -6,4 +6,5 @@ set(EOSIO_WASM_OLD_BEHAVIOR "Off")
 find_package(eosforce.cdt)
 
 add_subdirectory(eosio.token)
+add_subdirectory(eosio.lock)
 add_subdirectory(eosio.system)
