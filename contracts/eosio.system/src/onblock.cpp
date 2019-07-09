@@ -21,6 +21,12 @@ namespace eosio {
       const auto curr_block_num = current_block_num();
       const auto& block_producers = get_active_producers();
 
+      if( block_producers.size() < NUM_OF_TOP_BPS ){
+         // cannot be happan, but should make a perpar
+         // onblock should not error
+         return;
+      }
+
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
          schs_tbl.emplace( name{bpname}, [&]( schedule_info& s ) {
@@ -44,6 +50,7 @@ namespace eosio {
 
       const auto current_time_sec = time_point_sec( current_time_point() );
 
+      // producer a block is also make a heartbeat
       heartbeat_imp( bpname, current_time_sec );
 
       // reward bps
@@ -103,10 +110,10 @@ namespace eosio {
       }
 
       /// sort by producer name
-      std::sort(
-      vote_schedule.begin(), vote_schedule.end(), []( const auto& l, const auto& r ) -> bool {
-         return l.first.producer_name < r.first.producer_name;
-      } );
+      std::sort(vote_schedule.begin(), vote_schedule.end(), 
+         []( const auto& l, const auto& r ) -> bool {
+            return l.first.producer_name < r.first.producer_name;
+         } );
 
       std::vector<eosio::producer_key> vote_schedule_data;
       vote_schedule_data.reserve( vote_schedule.size() );
