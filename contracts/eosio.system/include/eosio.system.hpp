@@ -30,7 +30,6 @@ namespace eosio {
    class[[eosio::contract( "eosio.system" )]] system_contract : public contract {
       public:
          using contract::contract;
-         using account_name = uint64_t;
 
       public:
          struct [[eosio::table]] account_info {
