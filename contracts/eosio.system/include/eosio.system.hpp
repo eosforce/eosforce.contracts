@@ -145,7 +145,7 @@ namespace eosio {
                                           const string& memo );
 
          [[eosio::action]] void updatebp( const account_name& bpname,
-                                          const public_key& producer_key,
+                                          const public_key& block_signing_key,
                                           const uint32_t commission_rate,
                                           const std::string& url );
 
@@ -168,13 +168,13 @@ namespace eosio {
 
          [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
 
-         [[eosio::action]] void onblock( const block_timestamp&,
-                                         const account_name& bpname,
-                                         const uint16_t,
-                                         const checksum256&,
-                                         const checksum256&,
-                                         const checksum256&,
-                                         const uint32_t schedule_version );
+         [[eosio::action]] void onblock( const block_timestamp& timestamp,
+                                         const account_name&    bpname,
+                                         const uint16_t         confirmed,
+                                         const checksum256&     previous,
+                                         const checksum256&     transaction_mroot,
+                                         const checksum256&     action_mroot,
+                                         const uint32_t         schedule_version );
 
          [[eosio::action]] void onfee( const account_name& actor, 
                                        const asset& fee, 
@@ -185,7 +185,7 @@ namespace eosio {
          [[eosio::action]] void heartbeat( const account_name& bpname,
                                            const time_point_sec& timestamp );
 
-         [[eosio::action]] void removebp( const account_name& producer );
+         [[eosio::action]] void removebp( const account_name& bpname );
    };
 
 } // namespace eosio
