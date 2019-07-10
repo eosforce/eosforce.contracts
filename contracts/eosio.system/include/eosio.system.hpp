@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include <native.hpp>
+
 namespace eosio {
 
    using std::string;
