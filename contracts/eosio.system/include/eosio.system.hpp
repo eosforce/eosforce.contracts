@@ -72,11 +72,6 @@ namespace eosio {
             uint64_t primary_key() const { return name; }
          };
 
-         struct [[eosio::table]] producer {
-            account_name bpname;
-            uint32_t amount = 0;
-         };
-
          struct [[eosio::table]] producer_blacklist {
             account_name bpname;
             bool isactive = false;
@@ -86,11 +81,20 @@ namespace eosio {
 
 
          struct [[eosio::table]] schedule_info {
+            struct producer {
+               account_name bpname;
+               uint32_t amount = 0;
+
+               EOSLIB_SERIALIZE( producer, (bpname)(amount) )
+            };
+
             uint64_t version;
             uint32_t block_height;
-            producer producers[NUM_OF_TOP_BPS];
+            std::vector<producer> producers;
 
             uint64_t primary_key() const { return version; }
+
+            EOSLIB_SERIALIZE( schedule_info, (version)(block_height)(producers) )
          };
 
          struct [[eosio::table]] chain_status {
