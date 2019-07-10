@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include <native.hpp>
+
 namespace eosio {
 
    using std::string;
@@ -30,7 +32,6 @@ namespace eosio {
    class[[eosio::contract( "eosio.system" )]] system_contract : public contract {
       public:
          using contract::contract;
-         using account_name = uint64_t;
 
       public:
          struct [[eosio::table]] account_info {
@@ -73,11 +74,6 @@ namespace eosio {
             uint64_t primary_key() const { return name; }
          };
 
-         struct [[eosio::table]] producer {
-            account_name bpname;
-            uint32_t amount = 0;
-         };
-
          struct [[eosio::table]] producer_blacklist {
             account_name bpname;
             bool isactive = false;
@@ -87,11 +83,20 @@ namespace eosio {
 
 
          struct [[eosio::table]] schedule_info {
+            struct producer {
+               account_name bpname;
+               uint32_t amount = 0;
+
+               EOSLIB_SERIALIZE( producer, (bpname)(amount) )
+            };
+
             uint64_t version;
             uint32_t block_height;
-            producer producers[NUM_OF_TOP_BPS];
+            std::vector<producer> producers;
 
             uint64_t primary_key() const { return version; }
+
+            EOSLIB_SERIALIZE( schedule_info, (version)(block_height)(producers) )
          };
 
          struct [[eosio::table]] chain_status {
@@ -146,7 +151,7 @@ namespace eosio {
                                           const string& memo );
 
          [[eosio::action]] void updatebp( const account_name& bpname,
-                                          const public_key& producer_key,
+                                          const public_key& block_signing_key,
                                           const uint32_t commission_rate,
                                           const std::string& url );
 
@@ -169,13 +174,13 @@ namespace eosio {
 
          [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
 
-         [[eosio::action]] void onblock( const block_timestamp&,
-                                         const account_name& bpname,
-                                         const uint16_t,
-                                         const checksum256&,
-                                         const checksum256&,
-                                         const checksum256&,
-                                         const uint32_t schedule_version );
+         [[eosio::action]] void onblock( const block_timestamp& timestamp,
+                                         const account_name&    bpname,
+                                         const uint16_t         confirmed,
+                                         const checksum256&     previous,
+                                         const checksum256&     transaction_mroot,
+                                         const checksum256&     action_mroot,
+                                         const uint32_t         schedule_version );
 
          [[eosio::action]] void onfee( const account_name& actor, 
                                        const asset& fee, 
@@ -186,7 +191,19 @@ namespace eosio {
          [[eosio::action]] void heartbeat( const account_name& bpname,
                                            const time_point_sec& timestamp );
 
-         [[eosio::action]] void removebp( const account_name& producer );
+         [[eosio::action]] void removebp( const account_name& bpname );
    };
+
+   using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
+   using updatebp_action     = eosio::action_wrapper<"updatebp"_n,     &system_contract::updatebp>;
+   using vote_action         = eosio::action_wrapper<"vote"_n,         &system_contract::vote>;
+   using revote_action       = eosio::action_wrapper<"revote"_n,       &system_contract::revote>;
+   using unfreeze_action     = eosio::action_wrapper<"unfreeze"_n,     &system_contract::unfreeze>;
+   using vote4ram_action     = eosio::action_wrapper<"vote4ram"_n,     &system_contract::vote4ram>;
+   using unfreezeram_action  = eosio::action_wrapper<"unfreezeram"_n,  &system_contract::unfreezeram>;
+   using claim_action        = eosio::action_wrapper<"claim"_n,        &system_contract::claim>;
+   using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
+   using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
+   using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
 
 } // namespace eosio
