@@ -194,4 +194,16 @@ namespace eosio {
          [[eosio::action]] void removebp( const account_name& bpname );
    };
 
+   using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
+   using updatebp_action     = eosio::action_wrapper<"updatebp"_n,     &system_contract::updatebp>;
+   using vote_action         = eosio::action_wrapper<"vote"_n,         &system_contract::vote>;
+   using revote_action       = eosio::action_wrapper<"revote"_n,       &system_contract::revote>;
+   using unfreeze_action     = eosio::action_wrapper<"unfreeze"_n,     &system_contract::unfreeze>;
+   using vote4ram_action     = eosio::action_wrapper<"vote4ram"_n,     &system_contract::vote4ram>;
+   using unfreezeram_action  = eosio::action_wrapper<"unfreezeram"_n,  &system_contract::unfreezeram>;
+   using claim_action        = eosio::action_wrapper<"claim"_n,        &system_contract::claim>;
+   using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
+   using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
+   using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
+
 } // namespace eosio
