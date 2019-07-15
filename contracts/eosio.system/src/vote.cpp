@@ -45,15 +45,11 @@ namespace eosio {
       }
 
       bps_tbl.modify( bpf, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked -= restake.amount / 10000;
+         b.add_total_staked( curr_block_num, -restake );
       } );
 
       bps_tbl.modify( bpt, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += restake.amount / 10000;
+         b.add_total_staked( curr_block_num, restake );
       } );
    }
 
@@ -113,9 +109,7 @@ namespace eosio {
       }
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += ( change / 10000 );
+         b.add_total_staked( curr_block_num, change );
       } );
    }
 
@@ -195,9 +189,7 @@ namespace eosio {
       }
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += change / 10000;
+         b.add_total_staked( curr_block_num, change );
       } );
 
       vote4ramsum_table vote4ramsum_tbl( _self, _self.value );
@@ -252,7 +244,7 @@ namespace eosio {
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
       const int64_t newest_voteage = vts.voteage.get_age( curr_block_num );
-      const int64_t newest_total_voteage = bp.total_voteage + bp.total_staked * ( curr_block_num - bp.voteage_update_height );
+      const int64_t newest_total_voteage = bp.get_age( curr_block_num );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
       int128_t amount_voteage = (int128_t)bp.rewards_pool.amount * (int128_t)newest_voteage;

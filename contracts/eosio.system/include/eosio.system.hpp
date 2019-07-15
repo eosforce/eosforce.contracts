@@ -71,6 +71,25 @@ namespace eosio {
             std::string url;
             bool emergency = false;
 
+            // for bp_info, cannot change it table struct
+            inline void add_total_staked( const uint32_t curr_block_num, const asset& s ) {
+               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+               voteage_update_height = curr_block_num;
+               // JUST CORE_TOKEN can vote to bp
+               total_staked += s.amount / eosforce::utils::precision(CORE_SYMBOL.precision());
+            }
+
+            inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
+               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+               voteage_update_height = curr_block_num;
+               // JUST CORE_TOKEN can vote to bp
+               total_staked += sa / eosforce::utils::precision(CORE_SYMBOL.precision());
+            }
+
+            inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
+               return (total_staked * ( curr_block_num - voteage_update_height )) + total_voteage;
+            }
+
             uint64_t primary_key() const { return name; }
          };
 
