@@ -7,11 +7,13 @@
 
 #include <string>
 
+#include <eosforce/assetage.hpp>
 #include <native.hpp>
 
 namespace eosio {
 
    using std::string;
+   using eosforce::assetage;
 
    static constexpr symbol CORE_SYMBOL    = symbol(symbol_code("EOS"), 4);
    static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20;               //3*24*60*20*3s;
@@ -46,6 +48,7 @@ namespace eosio {
             asset        staked                = asset{ 0, CORE_SYMBOL };
             uint32_t     voteage_update_height = 0;
             int64_t      voteage               = 0;           // asset.amount * block height
+            assetage     voteage_n;
             asset        unstaking             = asset{ 0, CORE_SYMBOL };
             uint32_t     unstake_height        = 0;
 
