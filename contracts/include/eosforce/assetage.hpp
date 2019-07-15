@@ -5,9 +5,6 @@
 #include <eosio/crypto.hpp>
 
 namespace eosforce {
-
-   constexpr auto CORE_SYMBOL = eosio::symbol(eosio::symbol_code("EOS"), 4);
-
    namespace utils{
       constexpr inline int64_t precision( const uint8_t decimals ) {
          constexpr uint8_t res_size = 18;
@@ -39,6 +36,9 @@ namespace eosforce {
          }
       }
    }
+
+   constexpr auto CORE_SYMBOL = eosio::symbol(eosio::symbol_code("EOS"), 4);
+   constexpr auto CORE_SYMBOL_PRECISION = utils::precision(CORE_SYMBOL.precision());
 
    using eosio::symbol;
    using eosio::symbol_code;

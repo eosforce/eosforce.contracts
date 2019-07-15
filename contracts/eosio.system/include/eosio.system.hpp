@@ -13,8 +13,10 @@
 namespace eosio {
 
    using std::string;
+
    using eosforce::assetage;
    using eosforce::CORE_SYMBOL;
+   using eosforce::CORE_SYMBOL_PRECISION;
 
    static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20;               //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS    = 23;
@@ -76,14 +78,14 @@ namespace eosio {
                total_voteage += total_staked * ( curr_block_num - voteage_update_height );
                voteage_update_height = curr_block_num;
                // JUST CORE_TOKEN can vote to bp
-               total_staked += s.amount / eosforce::utils::precision(CORE_SYMBOL.precision());
+               total_staked += s.amount / CORE_SYMBOL_PRECISION;
             }
 
             inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
                total_voteage += total_staked * ( curr_block_num - voteage_update_height );
                voteage_update_height = curr_block_num;
                // JUST CORE_TOKEN can vote to bp
-               total_staked += sa / eosforce::utils::precision(CORE_SYMBOL.precision());
+               total_staked += sa / CORE_SYMBOL_PRECISION;
             }
 
             inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {

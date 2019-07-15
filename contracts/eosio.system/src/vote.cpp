@@ -13,7 +13,7 @@ namespace eosio {
       require_auth( name{voter} );
       check( frombp != tobp, " from and to cannot same" );
       check( restake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( restake.amount > 0 && ( restake.amount % 10000 == 0 ),
+      check( restake.amount > 0 && ( restake.amount % CORE_SYMBOL_PRECISION == 0 ),
             "need restake quantity > 0.0000 EOS and quantity is integer" );
 
       bps_table bps_tbl( _self, _self.value );
@@ -64,7 +64,7 @@ namespace eosio {
       const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % 10000 == 0,
+      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
              "need stake quantity >= 0.0000 EOS and quantity is integer" );
 
       const auto curr_block_num = current_block_num();
@@ -145,7 +145,7 @@ namespace eosio {
       const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % 10000 == 0,
+      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
             "need stake quantity >= 0.0000 EOS and quantity is integer" );
 
       const auto curr_block_num = current_block_num();
