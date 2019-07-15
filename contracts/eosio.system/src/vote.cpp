@@ -26,11 +26,9 @@ namespace eosio {
       votes_table votes_tbl( _self, voter );
       auto vtsf = votes_tbl.find( frombp );
       check( vtsf != votes_tbl.end(), "no vote on this bp" );
-      check( restake <= vtsf->staked, "need restake <= frombp stake" );
+      check( restake <= vtsf->voteage.staked, "need restake <= frombp stake" );
       votes_tbl.modify( vtsf, name{0}, [&]( vote_info& v ) {
-         v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-         v.voteage_update_height = curr_block_num;
-         v.staked -= restake;
+         v.voteage.minus_staked_by( curr_block_num, restake );
       } );
 
       // votes_table to bp
@@ -38,13 +36,11 @@ namespace eosio {
       if( vtst == votes_tbl.end() ) {
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = tobp;
-            v.staked = restake;
+            v.voteage.staked = restake;
          } );
       } else {
          votes_tbl.modify( vtst, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked += restake;
+            v.voteage.add_staked_by( curr_block_num, restake );
          } );
       }
 
@@ -87,18 +83,16 @@ namespace eosio {
 
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
+            v.voteage.staked = stake;
          } );
       } else {
-         change = stake.amount - vts->staked.amount;
+         change = stake.amount - vts->voteage.staked.amount;
          // act.available is already handling fee
          check( change <= act.available.amount,
                 "need stake change quantity < your available balance" );
 
          votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked = stake;
+            v.voteage.change_staked_to( curr_block_num, stake );
             if( change < 0 ) {
                v.unstaking.amount += -change;
                v.unstake_height = curr_block_num;
@@ -172,18 +166,16 @@ namespace eosio {
 
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
+            v.voteage.staked = stake;
          } );
       } else {
-         change = stake.amount - vts->staked.amount;
+         change = stake.amount - vts->voteage.staked.amount;
          // act.available is already handling fee
          check( change <= act.available.amount,
                "need stake change quantity < your available balance" );
 
          votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked = stake;
+            v.voteage.change_staked_to( curr_block_num, stake );
             if( change < 0 ) {
                v.unstaking.amount += -change;
                v.unstake_height = curr_block_num;
@@ -259,7 +251,7 @@ namespace eosio {
       votes_table votes_tbl( _self, voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
-      const int64_t newest_voteage = vts.voteage + vts.staked.amount / 10000 * ( curr_block_num - vts.voteage_update_height );
+      const int64_t newest_voteage = vts.voteage.get_age( curr_block_num );
       const int64_t newest_total_voteage = bp.total_voteage + bp.total_staked * ( curr_block_num - bp.voteage_update_height );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
@@ -273,8 +265,7 @@ namespace eosio {
       } );
 
       votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-         v.voteage = 0;
-         v.voteage_update_height = curr_block_num;
+         v.voteage.clean_age( curr_block_num );
       } );
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {

@@ -47,10 +47,32 @@ namespace eosforce {
    // asset age : asset age is a value equal asset * age by block num, in eosforce
    //             it used in many pos.
    struct assetage {
-      constexpr int64_t get_age( const uint32_t block_num ) const {
-         return ((staked.amount / utils::precision(staked.symbol.precision())) * ( block_num - update_height )) + age;
+      inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
+         return ((staked.amount / utils::precision(staked.symbol.precision())) * ( curr_block_num - update_height )) + age;
       }
 
+      inline void change_staked_to( const uint32_t curr_block_num, const asset& new_staked ) {
+         age = get_age( curr_block_num );
+         update_height = curr_block_num;
+         staked = new_staked;
+      }
+
+      inline void add_staked_by( const uint32_t curr_block_num, const asset& s ) {
+         age = get_age( curr_block_num );
+         update_height = curr_block_num;
+         staked += s;
+      }
+
+      inline void minus_staked_by( const uint32_t curr_block_num, const asset& s ) {
+         age = get_age( curr_block_num );
+         update_height = curr_block_num;
+         staked -= s;
+      }
+
+      inline void clean_age( const uint32_t curr_block_num ) {
+         age = 0;
+         update_height = curr_block_num;
+      }
 
       asset     staked        = asset{ 0, CORE_SYMBOL };
       uint32_t  update_height = 0;

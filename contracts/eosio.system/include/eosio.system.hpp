@@ -45,10 +45,7 @@ namespace eosio {
 
          struct [[eosio::table]] vote_info {
             account_name bpname                = 0;
-            asset        staked                = asset{ 0, CORE_SYMBOL };
-            uint32_t     voteage_update_height = 0;
-            int64_t      voteage               = 0;           // asset.amount * block height
-            assetage     voteage_n;
+            assetage     voteage;
             asset        unstaking             = asset{ 0, CORE_SYMBOL };
             uint32_t     unstake_height        = 0;
 
