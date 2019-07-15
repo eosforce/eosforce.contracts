@@ -52,7 +52,7 @@ namespace eosforce {
       }
 
 
-      asset     staked;
+      asset     staked        = asset{ 0, CORE_SYMBOL };
       uint32_t  update_height = 0;
       int64_t   age           = 0;
 
