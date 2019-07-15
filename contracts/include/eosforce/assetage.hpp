@@ -6,7 +6,7 @@
 
 namespace eosforce {
    namespace utils{
-      constexpr inline int64_t precision( const uint8_t decimals ) {
+      constexpr inline int64_t precision_base( const uint8_t decimals ) {
          constexpr uint8_t res_size = 18;
          constexpr int64_t res[res_size] = 
             {  1, 10, 100, 1000, 10000, 
@@ -38,7 +38,7 @@ namespace eosforce {
    }
 
    constexpr auto CORE_SYMBOL = eosio::symbol(eosio::symbol_code("EOS"), 4);
-   constexpr auto CORE_SYMBOL_PRECISION = utils::precision(CORE_SYMBOL.precision());
+   constexpr auto CORE_SYMBOL_PRECISION = utils::precision_base(CORE_SYMBOL.precision());
 
    using eosio::symbol;
    using eosio::symbol_code;
@@ -48,7 +48,7 @@ namespace eosforce {
    //             it used in many pos.
    struct assetage {
       inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
-         return ((staked.amount / utils::precision(staked.symbol.precision())) * ( curr_block_num - update_height )) + age;
+         return ((staked.amount / utils::precision_base(staked.symbol.precision())) * ( curr_block_num - update_height )) + age;
       }
 
       inline void change_staked_to( const uint32_t curr_block_num, const asset& new_staked ) {
