@@ -6,7 +6,7 @@
 
 namespace eosforce {
 
-
+   constexpr auto CORE_SYMBOL = eosio::symbol(eosio::symbol_code("EOS"), 4);
 
    namespace utils{
       constexpr inline int64_t precision( const uint8_t decimals ) {

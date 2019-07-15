@@ -14,8 +14,8 @@ namespace eosio {
 
    using std::string;
    using eosforce::assetage;
+   using eosforce::CORE_SYMBOL;
 
-   static constexpr symbol CORE_SYMBOL    = symbol(symbol_code("EOS"), 4);
    static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20;               //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS    = 23;
    static constexpr int BLOCK_REWARDS_BP  = 27000 ;                         //2.7000 EOS
