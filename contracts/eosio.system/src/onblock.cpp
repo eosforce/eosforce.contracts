@@ -133,7 +133,6 @@ namespace eosio {
                                      const time_point_sec& current_time_sec ) {
       bps_table bps_tbl( _self, _self.value );
       accounts_table acnts_tbl( _self, _self.value );
-      schedules_table schs_tbl( _self, _self.value );
       hb_table hb_tbl( _self, _self.value );
 
       const auto& global_votestate = get_global_votestate( curr_block_num );
@@ -160,15 +159,16 @@ namespace eosio {
       blackproducer_table blackproducer( _self, _self.value );
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          const auto blackpro = blackproducer.find( it->name );
-         if( ( blackpro != blackproducer.end() && !blackpro->isactive ) ||
-            it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
-            it->commission_rate > 10000 ) {
+         if(    ( blackpro != blackproducer.end() && !blackpro->isactive )
+             || it->total_staked <= rewarding_bp_staked_threshold
+             || it->commission_rate < 1
+             || it->commission_rate > 10000 ) {
             continue;
          }
 
          auto hb = hb_tbl.find( it->name );
-         if( hb == hb_tbl.end() ||
-            ( hb->timestamp + static_cast<uint32_t>( hb_max ) ) < current_time_sec) {
+         if(    hb == hb_tbl.end() 
+             || ( hb->timestamp + static_cast<uint32_t>( hb_max ) ) < current_time_sec ) {
             continue;
          }
 
@@ -196,11 +196,13 @@ namespace eosio {
       }
 
       // reward eosfund
-      const auto& eosfund = acnts_tbl.get( ( "devfund"_n ).value, "devfund is not found in accounts table" );
       const auto total_eosfund_reward = BLOCK_REWARDS_BP - sum_bps_reward;
-      acnts_tbl.modify( eosfund, name{0}, [&]( account_info& a ) { 
-         a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
-      } );
+      if( total_eosfund_reward > 0 ) {
+         const auto& eosfund = acnts_tbl.get( ( "devfund"_n ).value, "devfund is not found in accounts table" );
+         acnts_tbl.modify( eosfund, name{0}, [&]( account_info& a ) { 
+            a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
+         } );
+      }
    }
 
    const system_contract::global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
