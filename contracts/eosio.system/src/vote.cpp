@@ -51,6 +51,8 @@ namespace eosio {
       bps_tbl.modify( bpt, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, restake );
       } );
+
+      // no change total staked so no need on_change_total_staked
    }
 
    void system_contract::vote( const account_name& voter,
@@ -111,6 +113,8 @@ namespace eosio {
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, change );
       } );
+
+      on_change_total_staked( curr_block_num, change );
    }
 
    void system_contract::unfreeze( const account_name& voter, const account_name& bpname ) {
@@ -191,6 +195,8 @@ namespace eosio {
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, change );
       } );
+
+      on_change_total_staked( curr_block_num, change );
 
       vote4ramsum_table vote4ramsum_tbl( _self, _self.value );
       auto vtss = vote4ramsum_tbl.find( voter );

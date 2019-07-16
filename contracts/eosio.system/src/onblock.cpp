@@ -50,11 +50,14 @@ namespace eosio {
 
       const auto current_time_sec = time_point_sec( current_time_point() );
 
+      // make cache for vote state
+      make_global_votestate( curr_block_num );
+
       // producer a block is also make a heartbeat
       heartbeat_imp( bpname, current_time_sec );
 
       // reward bps
-      reward_bps( block_producers, current_time_sec );
+      reward_bps( block_producers, curr_block_num, current_time_sec );
 
       // update schedule
       if( curr_block_num % UPDATE_CYCLE == 0 ) {
@@ -125,18 +128,17 @@ namespace eosio {
       set_proposed_producers( vote_schedule_data );
    }
 
-   void system_contract::reward_bps( const std::vector<name>& block_producers, const time_point_sec& current_time_sec ) {
+   void system_contract::reward_bps( const std::vector<name>& block_producers,
+                                     const uint32_t curr_block_num,
+                                     const time_point_sec& current_time_sec ) {
       bps_table bps_tbl( _self, _self.value );
       accounts_table acnts_tbl( _self, _self.value );
       schedules_table schs_tbl( _self, _self.value );
       hb_table hb_tbl( _self, _self.value );
 
-      // calculate total staked all of the bps
-      // TODO: use cache staked_all_bps
-      int64_t staked_all_bps = 0;
-      for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         staked_all_bps += it->total_staked;
-      }
+      const auto& global_votestate = get_global_votestate( curr_block_num );
+      const auto& staked_all_bps = global_votestate.total_staked;
+
       if( staked_all_bps <= 0 ) {
          return;
       }
@@ -199,6 +201,30 @@ namespace eosio {
       acnts_tbl.modify( eosfund, name{0}, [&]( account_info& a ) { 
          a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
       } );
+   }
+
+   const system_contract::global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
+      global_votestate_table votestat( get_self(), get_self().value );
+      const auto it = votestat.find( eosforce_vote_stat.value );
+      if( it == votestat.end() ) {
+         global_votestate_info res;
+
+         bps_table bps_tbl( get_self(), get_self().value );
+         // calculate total staked all of the bps
+         int64_t staked_for_all_bps = 0;
+         for( const auto& bp : bps_tbl ) {
+            staked_for_all_bps += bp.total_staked;
+         }
+         res.total_staked = staked_for_all_bps;
+
+         votestat.emplace( eosforce_vote_stat, [&]( global_votestate_info& g ) { 
+            g = res;
+         } );
+
+         return res;
+      }
+
+      return *it;
    }
 
    void system_contract::onfee( const account_name& actor,

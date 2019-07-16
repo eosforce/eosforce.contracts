@@ -24,6 +24,8 @@ namespace eosio {
    static constexpr int BLOCK_REWARDS_B1  = 3000;                           //0.3000 EOS
    static constexpr uint32_t UPDATE_CYCLE = 100;                            //every 100 blocks update
 
+   static constexpr name eosforce_vote_stat = "eosforce"_n;
+
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -45,6 +47,14 @@ namespace eosio {
             uint64_t primary_key() const { return name; }
          };
 
+         // global_votestate_info some global data to vote state
+         struct [[eosio::table]] global_votestate_info {
+            name    stat_name    = eosforce_vote_stat;
+            int64_t total_staked = -1;
+
+            uint64_t primary_key() const { return stat_name.value; }
+         };
+
          struct [[eosio::table]] vote_info {
             account_name bpname                = 0;
             assetage     voteage;
@@ -52,7 +62,6 @@ namespace eosio {
             uint32_t     unstake_height        = 0;
 
             uint64_t primary_key() const { return bpname; }
-
          };
 
          struct [[eosio::table]] vote4ram_info {
@@ -144,10 +153,26 @@ namespace eosio {
          typedef eosio::multi_index< "chainstatus"_n, chain_status > cstatus_table;
          typedef eosio::multi_index< "heartbeat"_n, heartbeat_info > hb_table;
          typedef eosio::multi_index< "blackpro"_n, producer_blacklist > blackproducer_table;
+         typedef eosio::multi_index< "gvotestat"_n, global_votestate_info > global_votestate_table;
 
       private:
          void update_elected_bps();
-         void reward_bps( const std::vector<name>& block_producers, const time_point_sec& current_time_sec );
+         void reward_bps( const std::vector<name>& block_producers, const uint32_t curr_block_num, const time_point_sec& current_time_sec );
+         const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
+         inline void make_global_votestate( const uint32_t curr_block_num ) {
+            get_global_votestate( curr_block_num );
+         }
+
+         inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta ) {
+            make_global_votestate( curr_block_num );
+            global_votestate_table votestat( get_self(), get_self().value );
+            const auto it = votestat.find( eosforce_vote_stat.value );
+            check( it != votestat.end(), "make_global_votestate failed" );
+
+            votestat.modify( it, name{}, [&]( global_votestate_info& g ) { 
+                  g.total_staked += (deta / CORE_SYMBOL_PRECISION);
+            } );
+         }
 
          inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
             hb_table hb_tbl( _self, _self.value );
