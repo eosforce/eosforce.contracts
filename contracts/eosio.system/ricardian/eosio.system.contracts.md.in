@@ -1,0 +1,276 @@
+<h1 class="contract">transfer</h1>
+
+---
+spec_version: "0.2.0"
+title: Transfer EOS Token
+summary: 'Send {{nowrap quantity}} EOS Token from {{nowrap from}} to {{nowrap to}}'
+---
+
+{{from}} agrees to send {{quantity}} to {{to}}.
+
+{{#if memo}}There is a memo attached to the transfer stating:
+{{memo}}
+{{/if}}
+
+If {{from}} is not already the RAM payer of their {{asset_to_symbol_code quantity}} token balance, {{from}} will be designated as such. As a result, RAM will be deducted from {{from}}’s resources to refund the original RAM payer.
+
+If {{to}} does not have a balance for {{asset_to_symbol_code quantity}}, {{from}} will be designated as the RAM payer of the {{asset_to_symbol_code quantity}} token balance for {{to}}. As a result, RAM will be deducted from {{from}}’s resources to create the necessary records.
+
+
+<h1 class="contract">updatebp</h1>
+
+---
+spec_version: "0.2.0"
+title: Update Block Producer Info
+summary: '{{nowrap bpname}} reg or update their block producer info'
+---
+
+If {{bpname}} is not a block producer, {{bpname}} will reg to a block producer for eosforce mainnet, and {{bpname}} will be as the RAM payer of the {{bp_info}}.
+
+If {{bpname}} is a block producer, {{bpname}} update their block producer info with {{block_signing_key}}, {{commission_rate}} and {{url}}.
+
+
+<h1 class="contract">vote</h1>
+
+---
+spec_version: "0.2.0"
+title: Vote To Block Producer
+summary: '{{nowrap voter}} vote to {{nowrap bpname}} by {{nowrap stake}}'
+---
+
+{{voter}} vote to {{bpname}} by {{stake}}, {{bpname}} is a block producer.
+
+If {{voter}} have not vote to {{bpname}}, {{voter}} will be as the RAM payer of the {{vote_info}}.
+
+
+<h1 class="contract">revote</h1>
+
+---
+spec_version: "0.2.0"
+title: ReVote To Another Block Producer
+summary: '{{nowrap voter}} change vote from {{nowrap frombp}} to {{nowrap tobp}} with {{nowrap restake}} asset'
+---
+
+{{voter}} change vote from {{frombp}} to {{tobp}} with {{restake}} asset,
+
+If {{voter}} have not vote to {{tobp}}, {{voter}} will be as the RAM payer of the {{vote_info}}.
+
+
+<h1 class="contract">unfreeze</h1>
+
+---
+spec_version: "0.2.0"
+title: Unfreeze Voter's Stake Token
+summary: '{{nowrap voter}} unfree their stake tokens from {{nowrap bpname}}.'
+---
+
+{{voter}} unfree their stake tokens from {{nowrap bpname}} to it's account.
+
+
+<h1 class="contract">vote4ram</h1>
+
+---
+spec_version: "0.2.0"
+title: Vote Block Producer For RAM
+summary: '{{nowrap voter}} vote {{nowrap bpname}} by {{nowrap stake}} asset for use reward to get RAM.'
+---
+
+{{voter}} vote {{bpname}} by {{stake}} asset for use reward to get RAM.
+
+
+<h1 class="contract">unfreezeram</h1>
+
+---
+spec_version: "0.2.0"
+title: Unfreeze Voter's Stake Token For RAM
+summary: '{{nowrap voter}} unfree their stake tokens from {{nowrap bpname}} for RAM.'
+---
+
+
+<h1 class="contract">claim</h1>
+
+---
+spec_version: "0.2.0"
+title: Claim Voter 's Reward
+summary: '{{nowrap voter}} claim their reward by vote to {{nowrap bpname}}.'
+---
+
+
+<h1 class="contract">onblock</h1>
+
+---
+spec_version: "0.2.0"
+title: On Block
+summary: 'each block produced by {{nowrap bpname}} will exec a onblock action by header'
+---
+
+
+<h1 class="contract">onfee</h1>
+
+---
+spec_version: "0.2.0"
+title: On Fee
+summary: 'each action by {{nowrap actor}} will cost fee by {{nowrap fee}}'
+---
+
+
+<h1 class="contract">setemergency</h1>
+
+---
+spec_version: "0.2.0"
+title: Set Emergency State
+summary: '{{nowrap bpname}} set if current state is {{nowrap emergency}}'
+---
+
+
+<h1 class="contract">heartbeat</h1>
+
+---
+spec_version: "0.2.0"
+title: Block Producer Heartbeat
+summary: '{{nowrap bpname}} send heartbeat to chain by time {{nowrap timestamp}}'
+---
+
+<h1 class="contract">removebp</h1>
+
+---
+spec_version: "0.2.0"
+title: Remove Block Producer
+summary: 'unreg the {{nowrap bpname}} block producer'
+---
+
+
+<h1 class="contract">newaccount</h1>
+
+---
+spec_version: "0.2.0"
+title: Create New Account
+summary: '{{nowrap creator}} creates a new account with the name {{nowrap name}}'
+---
+
+{{creator}} creates a new account with the name {{name}} and the following permissions:
+
+owner permission with authority:
+{{to_json owner}}
+
+active permission with authority:
+{{to_json active}}
+
+<h1 class="contract">updateauth</h1>
+
+---
+spec_version: "0.2.0"
+title: Modify Account Permission
+summary: 'Add or update the {{nowrap permission}} permission of {{nowrap account}}'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+Modify, and create if necessary, the {{permission}} permission of {{account}} to have a parent permission of {{parent}} and the following authority:
+{{to_json auth}}
+
+<h1 class="contract">deleteauth</h1>
+
+---
+spec_version: "0.2.0"
+title: Delete Account Permission
+summary: 'Delete the {{nowrap permission}} permission of {{nowrap account}}'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+Delete the {{permission}} permission of {{account}}.
+
+<h1 class="contract">linkauth</h1>
+
+---
+spec_version: "0.2.0"
+title: Link Action to Permission
+summary: '{{nowrap account}} sets the minimum required permission for the {{#if type}}{{nowrap type}} action of the{{/if}} {{nowrap code}} contract to {{nowrap requirement}}'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+{{account}} sets the minimum required permission for the {{#if type}}{{type}} action of the{{/if}} {{code}} contract to {{requirement}}.
+
+{{#if type}}{{else}}Any links explicitly associated to specific actions of {{code}} will take precedence.{{/if}}
+
+
+<h1 class="contract">unlinkauth</h1>
+
+---
+spec_version: "0.2.0"
+title: Unlink Action from Permission
+summary: '{{nowrap account}} unsets the minimum required permission for the {{#if type}}{{nowrap type}} action of the{{/if}} {{nowrap code}} contract'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+{{account}} removes the association between the {{#if type}}{{type}} action of the{{/if}} {{code}} contract and its minimum required permission.
+
+{{#if type}}{{else}}This will not remove any links explicitly associated to specific actions of {{code}}.{{/if}}
+
+
+<h1 class="contract">canceldelay</h1>
+
+---
+spec_version: "0.2.0"
+title: Cancel Delayed Transaction
+summary: '{{nowrap canceling_auth.actor}} cancels a delayed transaction'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+{{canceling_auth.actor}} cancels the delayed transaction with id {{trx_id}}.
+
+
+<h1 class="contract">setabi</h1>
+
+---
+spec_version: "0.2.0"
+title: Deploy Contract ABI
+summary: 'Deploy contract ABI on account {{nowrap account}}'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+Deploy the ABI file associated with the contract on account {{account}}.
+
+
+<h1 class="contract">setcode</h1>
+
+---
+spec_version: "0.2.0"
+title: Deploy Contract Code
+summary: 'Deploy contract code on account {{nowrap account}}'
+icon: @ICON_BASE_URL@/@ACCOUNT_ICON_URI@
+---
+
+Deploy compiled contract code to the account {{account}}.
+
+
+<h1 class="contract">setconfig</h1>
+
+---
+spec_version: "0.2.0"
+title: Set Chain Config
+summary: 'Set {{nowrap typ}} chain config by {{nowrap num}}, {{nowrap key}} and {{nowrap fee}}'
+---
+
+<h1 class="contract">voteagefee</h1>
+
+---
+spec_version: "0.2.0"
+title: Fee By Voteage
+summary: 'each action by {{nowrap actor}} will cost fee by use vote age to {{nowrap fee}}'
+---
+
+<h1 class="contract">setfee</h1>
+
+---
+spec_version: "0.2.0"
+title: Set Action Fee
+summary: '{{account}} Set {{nowrap action}} in {{account}} 's contracts Fee {{nowrap fee}}'
+---
+
+<h1 class="contract">onerror</h1>
+
+---
+spec_version: "0.2.0"
+title: On Error
+summary: 'on error'
+---
