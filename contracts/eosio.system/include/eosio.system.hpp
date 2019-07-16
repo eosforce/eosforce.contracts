@@ -7,13 +7,17 @@
 
 #include <string>
 
+#include <eosforce/assetage.hpp>
 #include <native.hpp>
 
 namespace eosio {
 
    using std::string;
 
-   static constexpr symbol CORE_SYMBOL    = symbol(symbol_code("EOS"), 4);
+   using eosforce::assetage;
+   using eosforce::CORE_SYMBOL;
+   using eosforce::CORE_SYMBOL_PRECISION;
+
    static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20;               //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS    = 23;
    static constexpr int BLOCK_REWARDS_BP  = 27000 ;                         //2.7000 EOS
@@ -43,9 +47,7 @@ namespace eosio {
 
          struct [[eosio::table]] vote_info {
             account_name bpname                = 0;
-            asset        staked                = asset{ 0, CORE_SYMBOL };
-            uint32_t     voteage_update_height = 0;
-            int64_t      voteage               = 0;           // asset.amount * block height
+            assetage     voteage;
             asset        unstaking             = asset{ 0, CORE_SYMBOL };
             uint32_t     unstake_height        = 0;
 
@@ -70,6 +72,25 @@ namespace eosio {
             uint32_t voteage_update_height = 0;                        // this should be delete
             std::string url;
             bool emergency = false;
+
+            // for bp_info, cannot change it table struct
+            inline void add_total_staked( const uint32_t curr_block_num, const asset& s ) {
+               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+               voteage_update_height = curr_block_num;
+               // JUST CORE_TOKEN can vote to bp
+               total_staked += s.amount / CORE_SYMBOL_PRECISION;
+            }
+
+            inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
+               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+               voteage_update_height = curr_block_num;
+               // JUST CORE_TOKEN can vote to bp
+               total_staked += sa / CORE_SYMBOL_PRECISION;
+            }
+
+            inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
+               return (total_staked * ( curr_block_num - voteage_update_height )) + total_voteage;
+            }
 
             uint64_t primary_key() const { return name; }
          };

@@ -13,7 +13,7 @@ namespace eosio {
       require_auth( name{voter} );
       check( frombp != tobp, " from and to cannot same" );
       check( restake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( restake.amount > 0 && ( restake.amount % 10000 == 0 ),
+      check( restake.amount > 0 && ( restake.amount % CORE_SYMBOL_PRECISION == 0 ),
             "need restake quantity > 0.0000 EOS and quantity is integer" );
 
       bps_table bps_tbl( _self, _self.value );
@@ -26,11 +26,9 @@ namespace eosio {
       votes_table votes_tbl( _self, voter );
       auto vtsf = votes_tbl.find( frombp );
       check( vtsf != votes_tbl.end(), "no vote on this bp" );
-      check( restake <= vtsf->staked, "need restake <= frombp stake" );
+      check( restake <= vtsf->voteage.staked, "need restake <= frombp stake" );
       votes_tbl.modify( vtsf, name{0}, [&]( vote_info& v ) {
-         v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-         v.voteage_update_height = curr_block_num;
-         v.staked -= restake;
+         v.voteage.minus_staked_by( curr_block_num, restake );
       } );
 
       // votes_table to bp
@@ -38,26 +36,20 @@ namespace eosio {
       if( vtst == votes_tbl.end() ) {
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = tobp;
-            v.staked = restake;
+            v.voteage.staked = restake;
          } );
       } else {
          votes_tbl.modify( vtst, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked += restake;
+            v.voteage.add_staked_by( curr_block_num, restake );
          } );
       }
 
       bps_tbl.modify( bpf, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked -= restake.amount / 10000;
+         b.add_total_staked( curr_block_num, -restake );
       } );
 
       bps_tbl.modify( bpt, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += restake.amount / 10000;
+         b.add_total_staked( curr_block_num, restake );
       } );
    }
 
@@ -72,7 +64,7 @@ namespace eosio {
       const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % 10000 == 0,
+      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
              "need stake quantity >= 0.0000 EOS and quantity is integer" );
 
       const auto curr_block_num = current_block_num();
@@ -87,18 +79,16 @@ namespace eosio {
 
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
+            v.voteage.staked = stake;
          } );
       } else {
-         change = stake.amount - vts->staked.amount;
+         change = stake.amount - vts->voteage.staked.amount;
          // act.available is already handling fee
          check( change <= act.available.amount,
                 "need stake change quantity < your available balance" );
 
          votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked = stake;
+            v.voteage.change_staked_to( curr_block_num, stake );
             if( change < 0 ) {
                v.unstaking.amount += -change;
                v.unstake_height = curr_block_num;
@@ -119,9 +109,7 @@ namespace eosio {
       }
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += ( change / 10000 );
+         b.add_total_staked( curr_block_num, change );
       } );
    }
 
@@ -157,7 +145,7 @@ namespace eosio {
       const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % 10000 == 0,
+      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
             "need stake quantity >= 0.0000 EOS and quantity is integer" );
 
       const auto curr_block_num = current_block_num();
@@ -172,18 +160,16 @@ namespace eosio {
 
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
+            v.voteage.staked = stake;
          } );
       } else {
-         change = stake.amount - vts->staked.amount;
+         change = stake.amount - vts->voteage.staked.amount;
          // act.available is already handling fee
          check( change <= act.available.amount,
                "need stake change quantity < your available balance" );
 
          votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * ( curr_block_num - v.voteage_update_height );
-            v.voteage_update_height = curr_block_num;
-            v.staked = stake;
+            v.voteage.change_staked_to( curr_block_num, stake );
             if( change < 0 ) {
                v.unstaking.amount += -change;
                v.unstake_height = curr_block_num;
@@ -203,9 +189,7 @@ namespace eosio {
       }
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * ( curr_block_num - b.voteage_update_height );
-         b.voteage_update_height = curr_block_num;
-         b.total_staked += change / 10000;
+         b.add_total_staked( curr_block_num, change );
       } );
 
       vote4ramsum_table vote4ramsum_tbl( _self, _self.value );
@@ -259,8 +243,8 @@ namespace eosio {
       votes_table votes_tbl( _self, voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
-      const int64_t newest_voteage = vts.voteage + vts.staked.amount / 10000 * ( curr_block_num - vts.voteage_update_height );
-      const int64_t newest_total_voteage = bp.total_voteage + bp.total_staked * ( curr_block_num - bp.voteage_update_height );
+      const int64_t newest_voteage = vts.voteage.get_age( curr_block_num );
+      const int64_t newest_total_voteage = bp.get_age( curr_block_num );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
       int128_t amount_voteage = (int128_t)bp.rewards_pool.amount * (int128_t)newest_voteage;
@@ -273,8 +257,7 @@ namespace eosio {
       } );
 
       votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-         v.voteage = 0;
-         v.voteage_update_height = curr_block_num;
+         v.voteage.clean_age( curr_block_num );
       } );
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
