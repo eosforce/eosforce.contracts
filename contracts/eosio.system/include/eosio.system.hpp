@@ -230,10 +230,6 @@ namespace eosio {
                                          const checksum256&     action_mroot,
                                          const uint32_t         schedule_version );
 
-         [[eosio::action]] void onfee( const account_name& actor, 
-                                       const asset& fee, 
-                                       const account_name& bpname );
-
          [[eosio::action]] void setemergency( const account_name& bpname, const bool emergency );
 
          [[eosio::action]] void heartbeat( const account_name& bpname,
