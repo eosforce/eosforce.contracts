@@ -59,14 +59,14 @@ namespace eosio {
       // reward bps
       reward_bps( block_producers, curr_block_num, current_time_sec );
 
-      // update schedule
-      if( curr_block_num % UPDATE_CYCLE == 0 ) {
-         // reward block.one
+      if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
          const auto& b1 = acnts_tbl.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
          acnts_tbl.modify( b1, name{0}, [&]( account_info& a ) {
-            a.available += asset( BLOCK_REWARDS_B1 * UPDATE_CYCLE, CORE_SYMBOL );
+            a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
          } );
+      }
 
+      if( curr_block_num % UPDATE_CYCLE == 0 ) {
          update_elected_bps();
       }
    }
