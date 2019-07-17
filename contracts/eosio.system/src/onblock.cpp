@@ -228,23 +228,4 @@ namespace eosio {
 
       return *it;
    }
-
-   void system_contract::onfee( const account_name& actor,
-                                const asset& fee,
-                                const account_name& bpname ) {
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( actor, "account is not found in accounts table" );
-      check( fee.amount <= act.available.amount, "overdrawn available balance" );
-
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
-
-      acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
-         a.available -= fee; 
-      } );
-
-      bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) { 
-         b.rewards_pool += fee; 
-      } );
-   }
 } /// namespace eosio
