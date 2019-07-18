@@ -118,18 +118,14 @@ namespace eosio {
       // no change total staked so no need on_change_total_staked
    }
 
-   void system_contract::vote( const account_name& voter,
-                               const account_name& bpname,
-                               const asset& stake ) {
-      vote_by_typ_imp<votes_table>( voter, bpname, stake );
-   }
-
-   void system_contract::unfreeze( const account_name& voter, const account_name& bpname ) {
+   template< typename VOTE_TYP >
+   void system_contract::unfreeze_by_typ_imp( const account_name& voter,
+                                              const account_name& bpname ) {
       require_auth( name{voter} );
 
       const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
 
-      votes_table votes_tbl( _self, voter );
+      VOTE_TYP votes_tbl( get_self(), voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
       check( vts.unstake_height + FROZEN_DELAY < current_block_num(),
@@ -143,6 +139,17 @@ namespace eosio {
       votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) { 
          v.unstaking.set_amount( 0 ); 
       } );
+   }
+
+
+   void system_contract::vote( const account_name& voter,
+                               const account_name& bpname,
+                               const asset& stake ) {
+      vote_by_typ_imp<votes_table>( voter, bpname, stake );
+   }
+
+   void system_contract::unfreeze( const account_name& voter, const account_name& bpname ) {
+      unfreeze_by_typ_imp<votes_table>( voter, bpname );
    }
 
    void system_contract::vote4ram( const account_name& voter,
@@ -167,23 +174,7 @@ namespace eosio {
    }
 
    void system_contract::unfreezeram( const account_name& voter, const account_name& bpname ) {
-      require_auth( name{voter} );
-      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
-
-      votes4ram_table votes_tbl( _self, voter );
-      const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
-
-      check( vts.unstake_height + FROZEN_DELAY < current_block_num(),
-            "unfreeze is not available yet" );
-      check( 0 < vts.unstaking.amount, "need unstaking quantity > 0.0000 EOS" );
-
-      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
-         a.available += vts.unstaking; 
-      } );
-
-      votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) { 
-         v.unstaking.set_amount( 0 ); 
-      } );
+      unfreeze_by_typ_imp<votes4ram_table>( voter, bpname );
    }
 
    void system_contract::claim( const account_name& voter, const account_name& bpname ) {

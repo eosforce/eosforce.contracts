@@ -158,12 +158,17 @@ namespace eosio {
       private:
          // to bps in onblock
          void update_elected_bps();
-         void reward_bps( const std::vector<name>& block_producers, const uint32_t curr_block_num, const time_point_sec& current_time_sec );
+         void reward_bps( const std::vector<name>& block_producers,
+                          const uint32_t curr_block_num,
+                          const time_point_sec& current_time_sec );
 
          template< typename VOTE_TYP >
          int64_t vote_by_typ_imp( const account_name& voter,
                                   const account_name& bpname,
                                   const asset& stake );
+         template< typename VOTE_TYP >
+         void unfreeze_by_typ_imp( const account_name& voter,
+                                   const account_name& bpname );
 
          // imps
          inline const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
