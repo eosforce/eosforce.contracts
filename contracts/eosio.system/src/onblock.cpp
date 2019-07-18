@@ -77,8 +77,7 @@ namespace eosio {
       // Note this output is not same after updated
       // TODO: use table sorted datas
       for( const auto& it : _bps ) {
-         const auto blackpro = _blackproducers.find( it.name );
-         if( blackpro != _blackproducers.end() && ( !blackpro->isactive ) ) {
+         if( is_producer_in_blacklist( it.name ) ) {
             continue;
          }
 
@@ -148,8 +147,7 @@ namespace eosio {
       // reward bps, (bp_reward => bp_account_reward + bp_rewards_pool + eosfund_reward;)
       auto sum_bps_reward = 0;
       for( auto it = _bps.cbegin(); it != _bps.cend(); ++it ) {
-         const auto blackpro = _blackproducers.find( it->name );
-         if(    ( blackpro != _blackproducers.end() && !blackpro->isactive )
+         if(    is_producer_in_blacklist( it->name )
              || it->total_staked <= rewarding_bp_staked_threshold
              || it->commission_rate < 1
              || it->commission_rate > 10000 ) {

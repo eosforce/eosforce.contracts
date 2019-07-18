@@ -95,12 +95,14 @@ namespace eosio {
          } );
       }
 
-      auto blackpro = _blackproducers.find( bpname );
-      check(    blackpro == _blackproducers.end() 
-             || blackpro->isactive 
-             || ( !blackpro->isactive && change < 0 ), "bp is not active" );
+      if( change == 0 ) {
+         // if no change vote staked, just return and no error
+         return;
+      }
 
       if( change > 0 ) {
+         check( !is_producer_in_blacklist( bpname ),
+                "bp is not active, cannot add stake for vote" );
          _accounts.modify( act, name{0}, [&]( account_info& a ) { 
             a.available.amount -= change; 
          } );
@@ -176,12 +178,14 @@ namespace eosio {
          } );
       }
 
-      auto blackpro = _blackproducers.find( bpname );
-      check(    blackpro == _blackproducers.end() 
-             || blackpro->isactive 
-             || ( !blackpro->isactive && change < 0 ), "bp is not active" );
+      if( change == 0 ) {
+         // if no change vote staked, just return and no error
+         return;
+      }
 
       if( change > 0 ) {
+         check( !is_producer_in_blacklist( bpname ),
+                "bp is not active, cannot add stake for vote" );
          _accounts.modify( act, name{0}, [&]( account_info& a ) { 
             a.available.amount -= change; 
          } );

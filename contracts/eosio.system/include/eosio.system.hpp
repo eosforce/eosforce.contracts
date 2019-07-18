@@ -165,6 +165,7 @@ namespace eosio {
          inline void make_global_votestate( const uint32_t curr_block_num );
          inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta );
          inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
+         inline bool is_producer_in_blacklist( const account_name& bpname ) const;
 
       public:
          [[eosio::action]] void transfer( const account_name& from,
@@ -293,6 +294,12 @@ namespace eosio {
       } else {
          hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { hb.timestamp = timestamp; } );
       }
+   }
+
+   inline bool system_contract::is_producer_in_blacklist( const account_name& bpname ) const {
+      const auto itr = _blackproducers.find( bpname );
+      // Note isactive is false mean bp is ban
+      return itr != _blackproducers.end() && ( !itr->isactive );
    }
 
 } // namespace eosio
