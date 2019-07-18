@@ -204,28 +204,4 @@ namespace eosio {
          } );
       }
    }
-
-   const global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
-      global_votestate_table votestat( get_self(), get_self().value );
-      const auto it = votestat.find( eosforce_vote_stat.value );
-      if( it == votestat.end() ) {
-         global_votestate_info res;
-
-         bps_table bps_tbl( get_self(), get_self().value );
-         // calculate total staked all of the bps
-         int64_t staked_for_all_bps = 0;
-         for( const auto& bp : bps_tbl ) {
-            staked_for_all_bps += bp.total_staked;
-         }
-         res.total_staked = staked_for_all_bps;
-
-         votestat.emplace( eosforce_vote_stat, [&]( global_votestate_info& g ) { 
-            g = res;
-         } );
-
-         return res;
-      }
-
-      return *it;
-   }
 } /// namespace eosio

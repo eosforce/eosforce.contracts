@@ -72,23 +72,9 @@ namespace eosio {
       bool         emergency             = false;
 
       // for bp_info, cannot change it table struct
-      inline void add_total_staked( const uint32_t curr_block_num, const asset& s ) {
-         total_voteage += total_staked * ( curr_block_num - voteage_update_height );
-         voteage_update_height = curr_block_num;
-         // JUST CORE_TOKEN can vote to bp
-         total_staked += s.amount / CORE_SYMBOL_PRECISION;
-      }
-
-      inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
-         total_voteage += total_staked * ( curr_block_num - voteage_update_height );
-         voteage_update_height = curr_block_num;
-         // JUST CORE_TOKEN can vote to bp
-         total_staked += sa / CORE_SYMBOL_PRECISION;
-      }
-
-      inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
-         return ( total_staked * ( curr_block_num - voteage_update_height ) ) + total_voteage;
-      }
+      inline void add_total_staked( const uint32_t curr_block_num, const asset& s );
+      inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa );
+      inline constexpr int64_t get_age( const uint32_t curr_block_num ) const;
 
       uint64_t primary_key() const { return name; }
    };
@@ -163,39 +149,15 @@ namespace eosio {
          ~system_contract();
 
       private:
+         // to bps in onblock
          void update_elected_bps();
          void reward_bps( const std::vector<name>& block_producers, const uint32_t curr_block_num, const time_point_sec& current_time_sec );
-         const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
-         inline void make_global_votestate( const uint32_t curr_block_num ) {
-            get_global_votestate( curr_block_num );
-         }
-
-         inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta ) {
-            make_global_votestate( curr_block_num );
-            global_votestate_table votestat( get_self(), get_self().value );
-            const auto it = votestat.find( eosforce_vote_stat.value );
-            check( it != votestat.end(), "make_global_votestate failed" );
-
-            votestat.modify( it, name{}, [&]( global_votestate_info& g ) { 
-                  g.total_staked += (deta / CORE_SYMBOL_PRECISION);
-            } );
-         }
-
-         inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
-            hb_table hb_tbl( _self, _self.value );
-
-            const auto hb_itr = hb_tbl.find( bpname );
-            if( hb_itr == hb_tbl.end() ) {
-               hb_tbl.emplace( name{ bpname }, [&]( heartbeat_info& hb ) {
-                  hb.bpname = bpname;
-                  hb.timestamp = timestamp;
-               } );
-            } else {
-               hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { 
-                  hb.timestamp = timestamp; 
-               } );
-            }
-         }
+         
+         // imps
+         inline const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
+         inline void make_global_votestate( const uint32_t curr_block_num );
+         inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta );
+         inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
 
       public:
          [[eosio::action]] void transfer( const account_name& from,
@@ -254,5 +216,77 @@ namespace eosio {
    using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
    using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
    using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
+
+   // for bp_info, cannot change it table struct
+   inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {
+      total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+      voteage_update_height = curr_block_num;
+      // JUST CORE_TOKEN can vote to bp
+      total_staked += s.amount / CORE_SYMBOL_PRECISION;
+   }
+
+   inline void bp_info::add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
+      total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+      voteage_update_height = curr_block_num;
+      // JUST CORE_TOKEN can vote to bp
+      total_staked += sa / CORE_SYMBOL_PRECISION;
+   }
+
+   inline constexpr int64_t bp_info::get_age( const uint32_t curr_block_num ) const {
+      return ( total_staked * ( curr_block_num - voteage_update_height ) ) + total_voteage;
+   }
+
+   inline void system_contract::make_global_votestate( const uint32_t curr_block_num ) {
+      get_global_votestate( curr_block_num );
+   }
+
+   inline const global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
+      global_votestate_table votestat( get_self(), get_self().value );
+      const auto it = votestat.find( eosforce_vote_stat.value );
+      if( it == votestat.end() ) {
+         global_votestate_info res;
+
+         bps_table bps_tbl( get_self(), get_self().value );
+         // calculate total staked all of the bps
+         int64_t staked_for_all_bps = 0;
+         for( const auto& bp : bps_tbl ) {
+            staked_for_all_bps += bp.total_staked;
+         }
+         res.total_staked = staked_for_all_bps;
+
+         votestat.emplace( eosforce_vote_stat, [&]( global_votestate_info& g ) { 
+            g = res;
+         } );
+
+         return res;
+      }
+
+      return *it;
+   }
+
+   inline void system_contract::on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta ) {
+      make_global_votestate( curr_block_num );
+      global_votestate_table votestat( get_self(), get_self().value );
+      const auto it = votestat.find( eosforce_vote_stat.value );
+      check( it != votestat.end(), "make_global_votestate failed" );
+
+      votestat.modify( it, name{}, [&]( global_votestate_info& g ) {
+         g.total_staked += ( deta / CORE_SYMBOL_PRECISION );
+      } );
+   }
+
+   inline void system_contract::heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
+      hb_table hb_tbl( _self, _self.value );
+
+      const auto hb_itr = hb_tbl.find( bpname );
+      if( hb_itr == hb_tbl.end() ) {
+         hb_tbl.emplace( name{ bpname }, [&]( heartbeat_info& hb ) {
+            hb.bpname = bpname;
+            hb.timestamp = timestamp;
+         } );
+      } else {
+         hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { hb.timestamp = timestamp; } );
+      }
+   }
 
 } // namespace eosio
