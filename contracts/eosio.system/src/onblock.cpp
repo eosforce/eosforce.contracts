@@ -14,10 +14,6 @@ namespace eosio {
                                   const checksum256&,
                                   const checksum256&,
                                   const uint32_t schedule_version ) {
-      bps_table bps_tbl( _self, _self.value );
-      accounts_table acnts_tbl( _self, _self.value );
-      schedules_table schs_tbl( _self, _self.value );
-
       const auto curr_block_num = current_block_num();
       const auto& block_producers = get_active_producers();
 
@@ -27,6 +23,7 @@ namespace eosio {
          return;
       }
 
+      schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
          schs_tbl.emplace( name{bpname}, [&]( schedule_info& s ) {
@@ -60,8 +57,8 @@ namespace eosio {
       reward_bps( block_producers, curr_block_num, current_time_sec );
 
       if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
-         const auto& b1 = acnts_tbl.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
-         acnts_tbl.modify( b1, name{0}, [&]( account_info& a ) {
+         const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
+         _accounts.modify( b1, name{0}, [&]( account_info& a ) {
             a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
          } );
       }
@@ -72,20 +69,16 @@ namespace eosio {
    }
 
    void system_contract::update_elected_bps() {
-      bps_table bps_tbl( _self, _self.value );
-
       constexpr auto bps_top_size = static_cast<size_t>( NUM_OF_TOP_BPS );
 
       std::vector<std::pair<producer_key, int64_t>> vote_schedule;
       vote_schedule.reserve( 32 );
 
       // Note this output is not same after updated
-      blackproducer_table blackproducer( _self, _self.value );
-
       // TODO: use table sorted datas
-      for( const auto& it : bps_tbl ) {
-         const auto blackpro = blackproducer.find( it.name );
-         if( blackpro != blackproducer.end() && ( !blackpro->isactive ) ) {
+      for( const auto& it : _bps ) {
+         const auto blackpro = _blackproducers.find( it.name );
+         if( blackpro != _blackproducers.end() && ( !blackpro->isactive ) ) {
             continue;
          }
 
@@ -131,8 +124,6 @@ namespace eosio {
    void system_contract::reward_bps( const std::vector<name>& block_producers,
                                      const uint32_t curr_block_num,
                                      const time_point_sec& current_time_sec ) {
-      bps_table bps_tbl( _self, _self.value );
-      accounts_table acnts_tbl( _self, _self.value );
       hb_table hb_tbl( _self, _self.value );
 
       const auto& global_votestate = get_global_votestate( curr_block_num );
@@ -156,10 +147,9 @@ namespace eosio {
 
       // reward bps, (bp_reward => bp_account_reward + bp_rewards_pool + eosfund_reward;)
       auto sum_bps_reward = 0;
-      blackproducer_table blackproducer( _self, _self.value );
-      for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         const auto blackpro = blackproducer.find( it->name );
-         if(    ( blackpro != blackproducer.end() && !blackpro->isactive )
+      for( auto it = _bps.cbegin(); it != _bps.cend(); ++it ) {
+         const auto blackpro = _blackproducers.find( it->name );
+         if(    ( blackpro != _blackproducers.end() && !blackpro->isactive )
              || it->total_staked <= rewarding_bp_staked_threshold
              || it->commission_rate < 1
              || it->commission_rate > 10000 ) {
@@ -180,15 +170,15 @@ namespace eosio {
             bp_account_reward += bp_reward * 15 / 100;
          }
 
-         const auto& act = acnts_tbl.get( it->name, "bpname is not found in accounts table" );
-         acnts_tbl.modify(act, name{0}, [&]( account_info& a ) { 
+         const auto& act = _accounts.get( it->name, "bpname is not found in accounts table" );
+         _accounts.modify(act, name{0}, [&]( account_info& a ) { 
             a.available += asset( bp_account_reward, CORE_SYMBOL ); 
          } );
 
          // reward pool
          const auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
-         const auto& bp = bps_tbl.get( it->name, "bpname is not registered" );
-         bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) { 
+         const auto& bp = _bps.get( it->name, "bpname is not registered" );
+         _bps.modify( bp, name{0}, [&]( bp_info& b ) { 
             b.rewards_pool += asset( bp_rewards_pool, CORE_SYMBOL ); 
          } );
 
@@ -198,8 +188,8 @@ namespace eosio {
       // reward eosfund
       const auto total_eosfund_reward = BLOCK_REWARDS_BP - sum_bps_reward;
       if( total_eosfund_reward > 0 ) {
-         const auto& eosfund = acnts_tbl.get( ( "devfund"_n ).value, "devfund is not found in accounts table" );
-         acnts_tbl.modify( eosfund, name{0}, [&]( account_info& a ) { 
+         const auto& eosfund = _accounts.get( ( "devfund"_n ).value, "devfund is not found in accounts table" );
+         _accounts.modify( eosfund, name{0}, [&]( account_info& a ) { 
             a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
          } );
       }

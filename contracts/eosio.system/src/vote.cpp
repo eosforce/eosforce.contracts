@@ -16,9 +16,8 @@ namespace eosio {
       check( restake.amount > 0 && ( restake.amount % CORE_SYMBOL_PRECISION == 0 ),
             "need restake quantity > 0.0000 EOS and quantity is integer" );
 
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bpf = bps_tbl.get( frombp, "bpname is not registered" );
-      const auto& bpt = bps_tbl.get( tobp, "bpname is not registered" );
+      const auto& bpf = _bps.get( frombp, "bpname is not registered" );
+      const auto& bpt = _bps.get( tobp, "bpname is not registered" );
 
       const auto curr_block_num = current_block_num();
 
@@ -44,11 +43,11 @@ namespace eosio {
          } );
       }
 
-      bps_tbl.modify( bpf, name{0}, [&]( bp_info& b ) {
+      _bps.modify( bpf, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, -restake );
       } );
 
-      bps_tbl.modify( bpt, name{0}, [&]( bp_info& b ) {
+      _bps.modify( bpt, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, restake );
       } );
 
@@ -59,11 +58,9 @@ namespace eosio {
                                const account_name& bpname,
                                const asset& stake ) {
       require_auth( name{voter} );
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( voter, "voter is not found in accounts table" );
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
 
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
       check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
@@ -98,19 +95,18 @@ namespace eosio {
          } );
       }
 
-      blackproducer_table blackproducer( _self, _self.value );
-      auto blackpro = blackproducer.find( bpname );
-      check(    blackpro == blackproducer.end() 
+      auto blackpro = _blackproducers.find( bpname );
+      check(    blackpro == _blackproducers.end() 
              || blackpro->isactive 
              || ( !blackpro->isactive && change < 0 ), "bp is not active" );
 
       if( change > 0 ) {
-         acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
+         _accounts.modify( act, name{0}, [&]( account_info& a ) { 
             a.available.amount -= change; 
          } );
       }
 
-      bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, change );
       } );
 
@@ -119,8 +115,8 @@ namespace eosio {
 
    void system_contract::unfreeze( const account_name& voter, const account_name& bpname ) {
       require_auth( name{voter} );
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( voter, "voter is not found in accounts table" );
+
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
 
       votes_table votes_tbl( _self, voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
@@ -129,7 +125,7 @@ namespace eosio {
             "unfreeze is not available yet" );
       check( 0 < vts.unstaking.amount, "need unstaking quantity > 0.0000 EOS" );
 
-      acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += vts.unstaking; 
       } );
 
@@ -142,11 +138,10 @@ namespace eosio {
                                    const account_name& bpname,
                                    const asset& stake ) {
       require_auth( name{voter} );
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( voter, "voter is not found in accounts table" );
 
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
+
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
       check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
@@ -180,19 +175,19 @@ namespace eosio {
             }
          } );
       }
-      blackproducer_table blackproducer( _self, _self.value );
-      auto blackpro = blackproducer.find( bpname );
-      check(    blackpro == blackproducer.end() 
+
+      auto blackpro = _blackproducers.find( bpname );
+      check(    blackpro == _blackproducers.end() 
              || blackpro->isactive 
              || ( !blackpro->isactive && change < 0 ), "bp is not active" );
 
       if( change > 0 ) {
-         acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
+         _accounts.modify( act, name{0}, [&]( account_info& a ) { 
             a.available.amount -= change; 
          } );
       }
 
-      bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, change );
       } );
 
@@ -216,8 +211,7 @@ namespace eosio {
 
    void system_contract::unfreezeram( const account_name& voter, const account_name& bpname ) {
       require_auth( name{voter} );
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( voter, "voter is not found in accounts table" );
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
 
       votes4ram_table votes_tbl( _self, voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
@@ -226,7 +220,7 @@ namespace eosio {
             "unfreeze is not available yet" );
       check( 0 < vts.unstaking.amount, "need unstaking quantity > 0.0000 EOS" );
 
-      acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += vts.unstaking; 
       } );
 
@@ -240,11 +234,9 @@ namespace eosio {
 
       const auto curr_block_num = current_block_num();
 
-      accounts_table acnts_tbl( _self, _self.value );
-      const auto& act = acnts_tbl.get( voter, "voter is not found in accounts table" );
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
 
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
       votes_table votes_tbl( _self, voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
@@ -258,7 +250,7 @@ namespace eosio {
       check( 0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
             "need 0 <= claim reward quantity <= rewards_pool" );
 
-      acnts_tbl.modify( act, name{0}, [&]( account_info& a ) { 
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += reward; 
       } );
 
@@ -266,7 +258,7 @@ namespace eosio {
          v.voteage.clean_age( curr_block_num );
       } );
 
-      bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) {
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
          b.rewards_pool -= reward;
          b.total_voteage = newest_total_voteage - newest_voteage;
          b.voteage_update_height = curr_block_num;

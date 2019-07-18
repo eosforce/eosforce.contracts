@@ -150,6 +150,12 @@ namespace eosio {
          ~system_contract();
 
       private:
+         // tables for self, self, just some muit-used tables
+         accounts_table      _accounts;
+         bps_table           _bps;
+         blackproducer_table _blackproducers;
+
+      private:
          // to bps in onblock
          void update_elected_bps();
          void reward_bps( const std::vector<name>& block_producers, const uint32_t curr_block_num, const time_point_sec& current_time_sec );
@@ -247,10 +253,9 @@ namespace eosio {
       if( it == votestat.end() ) {
          global_votestate_info res;
 
-         bps_table bps_tbl( get_self(), get_self().value );
          // calculate total staked all of the bps
          int64_t staked_for_all_bps = 0;
-         for( const auto& bp : bps_tbl ) {
+         for( const auto& bp : _bps ) {
             staked_for_all_bps += bp.total_staked;
          }
          res.total_staked = staked_for_all_bps;
