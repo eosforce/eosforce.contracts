@@ -3,6 +3,7 @@ add_contract(eosio.system eosio.system
    ${CMAKE_CURRENT_SOURCE_DIR}/src/onblock.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/producer.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/transfer.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/native.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/vote.cpp)
 
 target_include_directories(eosio.system PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/../include)
