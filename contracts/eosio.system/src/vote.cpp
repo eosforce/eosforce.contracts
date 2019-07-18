@@ -6,6 +6,70 @@
 
 namespace eosio {
 
+   template< typename VOTE_TYP >
+   int64_t system_contract::vote_by_typ_imp( const account_name& voter,
+                                             const account_name& bpname,
+                                             const asset& stake ) {
+      require_auth( name{voter} );
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
+
+      check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
+      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
+             "need stake quantity >= 0.0000 EOS and quantity is integer" );
+
+      const auto curr_block_num = current_block_num();
+
+      int64_t change = 0;
+      VOTE_TYP votes_tbl( get_self(), voter );
+      auto vts = votes_tbl.find( bpname );
+      if( vts == votes_tbl.end() ) {
+         change = stake.amount;
+         // act.available is already handling fee
+         check( stake.amount <= act.available.amount, "need stake quantity < your available balance" );
+
+         votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
+            v.bpname = bpname;
+            v.voteage.staked = stake;
+         } );
+      } else {
+         change = stake.amount - vts->voteage.staked.amount;
+         // act.available is already handling fee
+         check( change <= act.available.amount,
+                "need stake change quantity < your available balance" );
+
+         votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
+            v.voteage.change_staked_to( curr_block_num, stake );
+            if( change < 0 ) {
+               v.unstaking.amount += -change;
+               v.unstake_height = curr_block_num;
+            }
+         } );
+      }
+
+      if( change == 0 ) {
+         // if no change vote staked, just return and no error
+         return change;
+      }
+
+      if( change > 0 ) {
+         check( !is_producer_in_blacklist( bpname ),
+                "bp is not active, cannot add stake for vote" );
+         _accounts.modify( act, name{0}, [&]( account_info& a ) { 
+            a.available.amount -= change; 
+         } );
+      }
+
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
+         b.add_total_staked( curr_block_num, change );
+      } );
+
+      on_change_total_staked( curr_block_num, change );
+
+      return change;
+   }
+
+
    void system_contract::revote( const account_name& voter,
                                  const account_name& frombp,
                                  const account_name& tobp,
@@ -57,62 +121,7 @@ namespace eosio {
    void system_contract::vote( const account_name& voter,
                                const account_name& bpname,
                                const asset& stake ) {
-      require_auth( name{voter} );
-      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
-
-      const auto& bp = _bps.get( bpname, "bpname is not registered" );
-
-      check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
-             "need stake quantity >= 0.0000 EOS and quantity is integer" );
-
-      const auto curr_block_num = current_block_num();
-
-      int64_t change = 0;
-      votes_table votes_tbl( _self, voter );
-      auto vts = votes_tbl.find( bpname );
-      if( vts == votes_tbl.end() ) {
-         change = stake.amount;
-         // act.available is already handling fee
-         check( stake.amount <= act.available.amount, "need stake quantity < your available balance" );
-
-         votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
-            v.bpname = bpname;
-            v.voteage.staked = stake;
-         } );
-      } else {
-         change = stake.amount - vts->voteage.staked.amount;
-         // act.available is already handling fee
-         check( change <= act.available.amount,
-                "need stake change quantity < your available balance" );
-
-         votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage.change_staked_to( curr_block_num, stake );
-            if( change < 0 ) {
-               v.unstaking.amount += -change;
-               v.unstake_height = curr_block_num;
-            }
-         } );
-      }
-
-      if( change == 0 ) {
-         // if no change vote staked, just return and no error
-         return;
-      }
-
-      if( change > 0 ) {
-         check( !is_producer_in_blacklist( bpname ),
-                "bp is not active, cannot add stake for vote" );
-         _accounts.modify( act, name{0}, [&]( account_info& a ) { 
-            a.available.amount -= change; 
-         } );
-      }
-
-      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.add_total_staked( curr_block_num, change );
-      } );
-
-      on_change_total_staked( curr_block_num, change );
+      vote_by_typ_imp<votes_table>( voter, bpname, stake );
    }
 
    void system_contract::unfreeze( const account_name& voter, const account_name& bpname ) {
@@ -139,65 +148,9 @@ namespace eosio {
    void system_contract::vote4ram( const account_name& voter,
                                    const account_name& bpname,
                                    const asset& stake ) {
-      require_auth( name{voter} );
+      const auto change = vote_by_typ_imp<votes4ram_table>( voter, bpname, stake );
 
-      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
-
-      const auto& bp = _bps.get( bpname, "bpname is not registered" );
-
-      check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
-      check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
-            "need stake quantity >= 0.0000 EOS and quantity is integer" );
-
-      const auto curr_block_num = current_block_num();
-
-      int64_t change = 0;
-      votes4ram_table votes_tbl( _self, voter );
-      auto vts = votes_tbl.find( bpname );
-      if( vts == votes_tbl.end() ) {
-         change = stake.amount;
-         // act.available is already handling fee
-         check( stake.amount <= act.available.amount, "need stake quantity < your available balance" );
-
-         votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
-            v.bpname = bpname;
-            v.voteage.staked = stake;
-         } );
-      } else {
-         change = stake.amount - vts->voteage.staked.amount;
-         // act.available is already handling fee
-         check( change <= act.available.amount,
-               "need stake change quantity < your available balance" );
-
-         votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-            v.voteage.change_staked_to( curr_block_num, stake );
-            if( change < 0 ) {
-               v.unstaking.amount += -change;
-               v.unstake_height = curr_block_num;
-            }
-         } );
-      }
-
-      if( change == 0 ) {
-         // if no change vote staked, just return and no error
-         return;
-      }
-
-      if( change > 0 ) {
-         check( !is_producer_in_blacklist( bpname ),
-                "bp is not active, cannot add stake for vote" );
-         _accounts.modify( act, name{0}, [&]( account_info& a ) { 
-            a.available.amount -= change; 
-         } );
-      }
-
-      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
-         b.add_total_staked( curr_block_num, change );
-      } );
-
-      on_change_total_staked( curr_block_num, change );
-
-      vote4ramsum_table vote4ramsum_tbl( _self, _self.value );
+      vote4ramsum_table vote4ramsum_tbl( get_self(), get_self().value );
       auto vtss = vote4ramsum_tbl.find( voter );
       if( vtss == vote4ramsum_tbl.end() ) {
          vote4ramsum_tbl.emplace( name{voter}, [&]( vote4ram_info& v ) {
