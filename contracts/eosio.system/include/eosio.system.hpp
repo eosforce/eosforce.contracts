@@ -44,6 +44,7 @@ namespace eosio {
          // WARNNING : EOSForce is different to eosio, which system will not call native contract in chain
          // so native is just to make abi, system_contract no need contain navtive
          system_contract( name s, name code, datastream<const char*> ds );
+         system_contract( const system_contract& ) = default;
          ~system_contract();
 
       public:
