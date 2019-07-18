@@ -28,6 +28,121 @@ namespace eosio {
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
 
+   // tables
+   struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
+      account_name name      = 0;
+      asset        available = asset{ 0, CORE_SYMBOL };
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   // global_votestate_info some global data to vote state
+   struct [[eosio::table, eosio::contract("eosio.system")]] global_votestate_info {
+      name    stat_name    = eosforce_vote_stat;
+      int64_t total_staked = -1;
+
+      uint64_t primary_key() const { return stat_name.value; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] vote_info {
+      account_name bpname = 0;
+      assetage     voteage;
+      asset        unstaking      = asset{ 0, CORE_SYMBOL };
+      uint32_t     unstake_height = 0;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] vote4ram_info {
+      account_name voter  = 0;
+      asset        staked = asset{ 0, CORE_SYMBOL };
+
+      uint64_t primary_key() const { return voter; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] bp_info {
+      account_name name             = 0;
+      public_key   block_signing_key;
+      uint32_t     commission_rate  = 0; // 0 - 10000 for 0% - 100%
+      int64_t      total_staked     = 0;
+      asset        rewards_pool     = asset{ 0, CORE_SYMBOL };
+      int64_t      total_voteage    = 0;          // asset.amount * block height
+      uint32_t     voteage_update_height = 0; // this should be delete
+      string       url;
+      bool         emergency             = false;
+
+      // for bp_info, cannot change it table struct
+      inline void add_total_staked( const uint32_t curr_block_num, const asset& s ) {
+         total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+         voteage_update_height = curr_block_num;
+         // JUST CORE_TOKEN can vote to bp
+         total_staked += s.amount / CORE_SYMBOL_PRECISION;
+      }
+
+      inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
+         total_voteage += total_staked * ( curr_block_num - voteage_update_height );
+         voteage_update_height = curr_block_num;
+         // JUST CORE_TOKEN can vote to bp
+         total_staked += sa / CORE_SYMBOL_PRECISION;
+      }
+
+      inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
+         return ( total_staked * ( curr_block_num - voteage_update_height ) ) + total_voteage;
+      }
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] producer_blacklist {
+      account_name bpname;
+      bool         isactive = false;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] schedule_info {
+      struct producer {
+         account_name bpname;
+         uint32_t     amount = 0;
+
+         EOSLIB_SERIALIZE( producer, ( bpname )( amount ) )
+      };
+
+      uint64_t              version;
+      uint32_t              block_height;
+      std::vector<producer> producers;
+
+      uint64_t primary_key() const { return version; }
+
+      EOSLIB_SERIALIZE( schedule_info, ( version )( block_height )( producers ) )
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] chain_status {
+      account_name name = ( "chainstatus"_n ).value;
+      bool emergency = false;
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] heartbeat_info {
+      account_name   bpname;
+      time_point_sec timestamp;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   // system contract tables
+   typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
+   typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
+   typedef eosio::multi_index<"votes4ram"_n,   vote_info>             votes4ram_table;
+   typedef eosio::multi_index<"vote4ramsum"_n, vote4ram_info>         vote4ramsum_table;
+   typedef eosio::multi_index<"bps"_n,         bp_info>               bps_table;
+   typedef eosio::multi_index<"schedules"_n,   schedule_info>         schedules_table;
+   typedef eosio::multi_index<"chainstatus"_n, chain_status>          cstatus_table;
+   typedef eosio::multi_index<"heartbeat"_n,   heartbeat_info>        hb_table;
+   typedef eosio::multi_index<"blackpro"_n,    producer_blacklist>    blackproducer_table;
+   typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
+
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -46,123 +161,6 @@ namespace eosio {
          system_contract( name s, name code, datastream<const char*> ds );
          system_contract( const system_contract& ) = default;
          ~system_contract();
-
-      public:
-         struct [[eosio::table]] account_info {
-            account_name name      = 0;
-            asset        available = asset{ 0, CORE_SYMBOL };
-
-            uint64_t primary_key() const { return name; }
-         };
-
-         // global_votestate_info some global data to vote state
-         struct [[eosio::table]] global_votestate_info {
-            name    stat_name    = eosforce_vote_stat;
-            int64_t total_staked = -1;
-
-            uint64_t primary_key() const { return stat_name.value; }
-         };
-
-         struct [[eosio::table]] vote_info {
-            account_name bpname                = 0;
-            assetage     voteage;
-            asset        unstaking             = asset{ 0, CORE_SYMBOL };
-            uint32_t     unstake_height        = 0;
-
-            uint64_t primary_key() const { return bpname; }
-         };
-
-         struct [[eosio::table]] vote4ram_info {
-            account_name voter  = 0;
-            asset        staked = asset{ 0, CORE_SYMBOL };
-
-            uint64_t primary_key() const { return voter; }
-         };
-
-         struct [[eosio::table]] bp_info {
-            account_name name = 0;
-            public_key block_signing_key;
-            uint32_t commission_rate       = 0;                        // 0 - 10000 for 0% - 100%
-            int64_t  total_staked          = 0;
-            asset    rewards_pool          = asset{ 0, CORE_SYMBOL };
-            int64_t  total_voteage         = 0;                        // asset.amount * block height
-            uint32_t voteage_update_height = 0;                        // this should be delete
-            std::string url;
-            bool emergency = false;
-
-            // for bp_info, cannot change it table struct
-            inline void add_total_staked( const uint32_t curr_block_num, const asset& s ) {
-               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
-               voteage_update_height = curr_block_num;
-               // JUST CORE_TOKEN can vote to bp
-               total_staked += s.amount / CORE_SYMBOL_PRECISION;
-            }
-
-            inline void add_total_staked( const uint32_t curr_block_num, const int64_t sa ) {
-               total_voteage += total_staked * ( curr_block_num - voteage_update_height );
-               voteage_update_height = curr_block_num;
-               // JUST CORE_TOKEN can vote to bp
-               total_staked += sa / CORE_SYMBOL_PRECISION;
-            }
-
-            inline constexpr int64_t get_age( const uint32_t curr_block_num ) const {
-               return (total_staked * ( curr_block_num - voteage_update_height )) + total_voteage;
-            }
-
-            uint64_t primary_key() const { return name; }
-         };
-
-         struct [[eosio::table]] producer_blacklist {
-            account_name bpname;
-            bool isactive = false;
-
-            uint64_t primary_key() const { return bpname; }
-         };
-
-
-         struct [[eosio::table]] schedule_info {
-            struct producer {
-               account_name bpname;
-               uint32_t amount = 0;
-
-               EOSLIB_SERIALIZE( producer, (bpname)(amount) )
-            };
-
-            uint64_t version;
-            uint32_t block_height;
-            std::vector<producer> producers;
-
-            uint64_t primary_key() const { return version; }
-
-            EOSLIB_SERIALIZE( schedule_info, (version)(block_height)(producers) )
-         };
-
-         struct [[eosio::table]] chain_status {
-            account_name name = ("chainstatus"_n).value;
-            bool emergency = false;
-
-            uint64_t primary_key() const { return name; }
-         };
-         
-         struct [[eosio::table]] heartbeat_info {
-            account_name bpname;
-            time_point_sec timestamp;
-            
-            uint64_t primary_key() const { return bpname; }
-         };
-
-         // tables
-         typedef eosio::multi_index< "accounts"_n, account_info > accounts_table;
-         typedef eosio::multi_index< "votes"_n, vote_info > votes_table;
-         typedef eosio::multi_index< "votes4ram"_n, vote_info > votes4ram_table;
-         typedef eosio::multi_index< "vote4ramsum"_n, vote4ram_info > vote4ramsum_table;
-         typedef eosio::multi_index< "bps"_n, bp_info > bps_table;
-         typedef eosio::multi_index< "schedules"_n, schedule_info > schedules_table;
-         typedef eosio::multi_index< "chainstatus"_n, chain_status > cstatus_table;
-         typedef eosio::multi_index< "heartbeat"_n, heartbeat_info > hb_table;
-         typedef eosio::multi_index< "blackpro"_n, producer_blacklist > blackproducer_table;
-         typedef eosio::multi_index< "gvotestat"_n, global_votestate_info > global_votestate_table;
-
 
       private:
          void update_elected_bps();

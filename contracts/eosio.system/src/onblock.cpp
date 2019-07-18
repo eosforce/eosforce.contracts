@@ -205,7 +205,7 @@ namespace eosio {
       }
    }
 
-   const system_contract::global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
+   const global_votestate_info system_contract::get_global_votestate( const uint32_t curr_block_num ) {
       global_votestate_table votestat( get_self(), get_self().value );
       const auto it = votestat.find( eosforce_vote_stat.value );
       if( it == votestat.end() ) {
