@@ -27,6 +27,7 @@ namespace eosio {
    static constexpr uint32_t REWARD_B1_CYCLE   = NUM_OF_TOP_BPS * 100;
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
+   static constexpr name chainstatus_name   = "chainstatus"_n;
 
    // tables
    struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
@@ -104,8 +105,8 @@ namespace eosio {
    };
 
    struct [[eosio::table, eosio::contract("eosio.system")]] chain_status {
-      account_name name = ( "chainstatus"_n ).value;
-      bool emergency = false;
+      account_name name      = chainstatus_name.value;
+      bool         emergency = false;
 
       uint64_t primary_key() const { return name; }
    };

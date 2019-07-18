@@ -38,7 +38,7 @@ namespace eosio {
       const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
 
       cstatus_table cstatus_tbl( _self, _self.value );
-      const auto& cstatus = cstatus_tbl.get( ("chainstatus"_n).value, "get chainstatus fatal" );
+      const auto& cstatus = cstatus_tbl.get( chainstatus_name.value, "get chain status fatal" );
 
       bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) { 
          b.emergency = emergency; 
