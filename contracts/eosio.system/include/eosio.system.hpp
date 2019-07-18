@@ -38,8 +38,13 @@ namespace eosio {
     * @{
     */
    class[[eosio::contract( "eosio.system" )]] system_contract : public contract {
+      using contract::contract;
+
       public:
-         using contract::contract;
+         // WARNNING : EOSForce is different to eosio, which system will not call native contract in chain
+         // so native is just to make abi, system_contract no need contain navtive
+         system_contract( name s, name code, datastream<const char*> ds );
+         ~system_contract();
 
       public:
          struct [[eosio::table]] account_info {
@@ -156,6 +161,7 @@ namespace eosio {
          typedef eosio::multi_index< "heartbeat"_n, heartbeat_info > hb_table;
          typedef eosio::multi_index< "blackpro"_n, producer_blacklist > blackproducer_table;
          typedef eosio::multi_index< "gvotestat"_n, global_votestate_info > global_votestate_table;
+
 
       private:
          void update_elected_bps();
