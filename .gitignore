@@ -31,10 +31,6 @@
 *.out
 *.app
 
-<<<<<<< HEAD
-/build
-=======
 \.vscode/
 build/
 buildc/
->>>>>>> upstream/release-v1.1.x

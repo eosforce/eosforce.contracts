@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-add_contract(eosio.system eosio.system ${CMAKE_CURRENT_SOURCE_DIR}/src/eosio.system.cpp)
-
-target_include_directories(eosio.system
-   PUBLIC
-   ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-set_target_properties(eosio.system
-   PROPERTIES
-   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-=======
 add_contract(eosio.system eosio.system 
    ${CMAKE_CURRENT_SOURCE_DIR}/src/eosio.system.cpp 
    ${CMAKE_CURRENT_SOURCE_DIR}/src/onblock.cpp
@@ -24,4 +13,3 @@ set_target_properties(eosio.system PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ricardian/eosio.system.contracts.md.in ${CMAKE_CURRENT_BINARY_DIR}/ricardian/eosio.system.contracts.md @ONLY )
 
 target_compile_options( eosio.system PUBLIC -R${CMAKE_CURRENT_SOURCE_DIR}/ricardian -R${CMAKE_CURRENT_BINARY_DIR}/ricardian )
->>>>>>> upstream/release-v1.1.x
