@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <../../eosforcelib/config.hpp>
 
 using eosio::asset;
@@ -20,3 +21,15 @@ class [[eosio::contract("eosio.lock")]] eoslock : public contract {
       eosio::multi_index<"accounts"_n, account> _accounts;
 
 };
+=======
+/**
+ *  @file
+ *  @copyright defined in eos/LICENSE.txt
+ */
+
+#include <eosio.lock/eosio.lock.hpp>
+
+namespace eosio {
+
+} /// namespace eosio
+>>>>>>> upstream/release-v1.1.x

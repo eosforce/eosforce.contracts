@@ -5,7 +5,11 @@ project(eosforce_contracts)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 6)
 set(VERSION_PATCH 0)
+<<<<<<< HEAD
 #set(VERSION_SUFFIX rc3)
+=======
+#set(VERSION_SUFFIX develop)
+>>>>>>> upstream/release-v1.1.x
 
 if (VERSION_SUFFIX)
    set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_SUFFIX}")
@@ -19,6 +23,7 @@ find_package(eosforce.cdt)
 
 message(STATUS "Building eosforce.contracts v${VERSION_FULL}")
 
+<<<<<<< HEAD
 set(EOSFORCE_CDT_VERSION_MIN "1.5")
 set(EOSFORCE_CDT_VERSION_SOFT_MAX "1.5")
 #set(EOSFORCE_CDT_VERSION_HARD_MAX "")
@@ -31,6 +36,26 @@ EOSIO_CHECK_VERSION(VERSION_OUTPUT "${EOSFORCE_CDT_VERSION}"
                                    "${EOSFORCE_CDT_VERSION_HARD_MAX}"
                                    VERSION_MATCH_ERROR_MSG)
 
+=======
+set(EOSIO_CDT_VERSION_MIN "1.5")
+set(EOSIO_CDT_VERSION_SOFT_MAX "1.5")
+#set(EOSIO_CDT_VERSION_HARD_MAX "")
+
+### Check the version of eosforce.cdt
+set(VERSION_MATCH_ERROR_MSG "")
+EOSIO_CHECK_VERSION(VERSION_OUTPUT "${EOSIO_CDT_VERSION}"
+                                   "${EOSIO_CDT_VERSION_MIN}"
+                                   "${EOSIO_CDT_VERSION_SOFT_MAX}"
+                                   "${EOSIO_CDT_VERSION_HARD_MAX}"
+                                   VERSION_MATCH_ERROR_MSG)
+if(VERSION_OUTPUT STREQUAL "MATCH")
+   message(STATUS "Using eosforce.cdt version ${EOSIO_CDT_VERSION}")
+elseif(VERSION_OUTPUT STREQUAL "WARN")
+   message(WARNING "Using eosforce.cdt version ${EOSIO_CDT_VERSION} even though it exceeds the maximum supported version of ${EOSIO_CDT_VERSION_SOFT_MAX}; continuing with configuration, however build may fail.\nIt is recommended to use eosforce.cdt version ${EOSIO_CDT_VERSION_SOFT_MAX}.x")
+else() # INVALID OR MISMATCH
+   message(FATAL_ERROR "Found eosforce.cdt version ${EOSIO_CDT_VERSION} but it does not satisfy version requirements: ${VERSION_MATCH_ERROR_MSG}\nPlease use eosforce.cdt version ${EOSIO_CDT_VERSION_SOFT_MAX}.x")
+endif(VERSION_OUTPUT STREQUAL "MATCH")
+>>>>>>> upstream/release-v1.1.x
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
    set(TEST_BUILD_TYPE "Debug")
@@ -51,3 +76,19 @@ ExternalProject_Add(
    BUILD_ALWAYS 1
 )
 
+<<<<<<< HEAD
+=======
+if (APPLE)
+   set(OPENSSL_ROOT "/usr/local/opt/openssl")
+elseif (UNIX)
+   set(OPENSSL_ROOT "/usr/include/openssl")
+endif()
+set(SECP256K1_ROOT "/usr/local")
+
+if (APPLE)
+   set(OPENSSL_ROOT "/usr/local/opt/openssl")
+elseif (UNIX)
+   set(OPENSSL_ROOT "/usr/include/openssl")
+endif()
+set(SECP256K1_ROOT "/usr/local")
+>>>>>>> upstream/release-v1.1.x
