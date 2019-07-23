@@ -131,7 +131,6 @@ namespace eosio {
    typedef eosio::multi_index<"heartbeat"_n,   heartbeat_info>        hb_table;
    typedef eosio::multi_index<"blackpro"_n,    producer_blacklist>    blackproducer_table;
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
-   typedef eosio::multi_index<"fixvotes"_n,    fix_time_votes>        fix_time_votes_table;
 
    /**
     * @defgroup system_contract eosio.system

@@ -35,31 +35,28 @@ namespace eosio {
 
 
    // fix_time_votes : fix time vote infos for a account
-   struct [[eosio::table, eosio::contract("eosio.system")]] fix_time_votes {
-
-      // one fix time vote
-      struct fix_time_vote_info {
-         enum state {
-            nil = 0,
-            voting,
-            wait_withdraw,
-            wait_claim, wait_unfreeze,
-            unfreezed
-         };
-
-         name     fvote_typ          = name{ 0 };
-         assetage votepower_age;
-         asset    vote               = asset{ 0, CORE_SYMBOL };
-         uint32_t start_block_num    = 0;
-         uint32_t withdraw_block_num = 0;
-         bool     is_withdraw        = false;
-
-         // TODO: need use vote type by fvote_typ
-         inline state get_state( const uint32_t curr_block_num ) const { return state::nil; }
+   struct [[eosio::table, eosio::contract("eosio.system")]] fix_time_vote_info {
+      enum state {
+         nil = 0,
+         voting,
+         wait_withdraw,
+         wait_claim, wait_unfreeze,
+         unfreezed
       };
 
-      account_name                    voter = 0;
-      std::vector<fix_time_vote_info> votes;
-   };
+      uint64_t     key                = 0; // add by available_primary_key()
+      account_name voter              = 0;
+      name         fvote_typ          = name{ 0 };
+      assetage     votepower_age;
+      asset        vote               = asset{ 0, CORE_SYMBOL };
+      uint32_t     start_block_num    = 0;
+      uint32_t     withdraw_block_num = 0;
+      bool         is_withdraw        = false;
 
+      uint64_t primary_key() const { return key; }
+
+      // TODO: need use vote type by fvote_typ
+      inline state get_state( const uint32_t curr_block_num ) const { return state::nil; }
+   };
+   typedef eosio::multi_index<"fixvotes"_n, fix_time_vote_info> fix_time_votes_table;
 } // namespace eosio
