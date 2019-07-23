@@ -27,6 +27,7 @@ namespace eosio {
          struct [[eosio::table]] pledge_type {
             name        pledge_name;
             account_name   deduction_account;
+            asset       pledge;
 
             uint64_t primary_key()const { return pledge_name.value; }
          };
@@ -51,9 +52,11 @@ namespace eosio {
       public:
          [[eosio::action]] void addtype( const name& pledge_name,
                                        const account_name& deduction_account,
+                                       const asset& quantity,
                                        const string& memo );
 
          [[eosio::action]] void addpledge( const name& pledge_name,
+                                       const account_name& pledger,
                                        const asset& quantity,
                                        const string& memo );
 
