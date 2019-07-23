@@ -207,6 +207,21 @@ namespace eosio {
 
          [[eosio::action]] void unfreezeram( const account_name& voter, const account_name& bpname );
 
+         // make a fix-time vote by voter to bpname with stake token
+         // type is fix-time type, 
+         [[eosio::action]] void votefix( const account_name& voter,
+                                         const account_name& bpname,
+                                         const name& type,
+                                         const asset& stake );
+
+         [[eosio::action]] void revotefix( const account_name& voter,
+                                           const uint64_t& key,
+                                           const account_name& bpname );
+
+         // take out stake to a fix-time vote by voter after vote is timeout
+         [[eosio::action]] void outfixvote( const account_name& voter,
+                                            const uint64_t& key );
+
          [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
 
          [[eosio::action]] void onblock( const block_timestamp& timestamp,
