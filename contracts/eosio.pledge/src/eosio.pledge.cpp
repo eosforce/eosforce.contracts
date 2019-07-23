@@ -51,7 +51,27 @@ namespace eosio {
                                  const account_name& debitee,
                                  const asset& quantity,
                                  const string& memo ){
+      pledgetypes pt_tbl(get_self(),get_self().value);
+      auto type = pt_tbl.find(pledge_name.value);
+      check(type != pt_tbl.end(),"the pledge type do not exist");
+      check(quantity.symbol.code() == type->pledge.symbol.code(),"the symbol do not match");
+      require_auth( name{type->deduction_account} );
 
+      pledges ple_tbl(get_self(),debitee);
+      auto pledge = ple_tbl.find(pledge_name.value);
+      if (pledge == ple_tbl.end()) {
+         ple_tbl.emplace( name{debitee}, [&]( pledge_info& b ) { 
+            b.pledge_name = pledge_name;
+            b.pledge = asset(0,quantity.symbol) - quantity;
+            b.deduction = quantity;
+         });
+      }
+      else {
+         ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
+            b.pledge -= quantity;
+            b.deduction += quantity;
+         });
+      }
    }
 
    void pledge::withdraw( const name& pledge_name,
