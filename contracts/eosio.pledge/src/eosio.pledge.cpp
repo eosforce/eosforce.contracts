@@ -78,7 +78,20 @@ namespace eosio {
                                  const account_name& pledger,
                                  const asset& quantity,
                                  const string& memo ){
+      require_auth( name{pledger} );
+      pledgetypes pt_tbl(get_self(),get_self().value);
+      auto type = pt_tbl.find(pledge_name.value);
+      check(type != pt_tbl.end(),"the pledge type do not exist");
+      check(quantity.symbol.code() == type->pledge.symbol.code(),"the symbol do not match");
+      
+      pledges ple_tbl(get_self(),pledger);
+      auto pledge = ple_tbl.find(pledge_name.value);
+      check(pledge != ple_tbl.end(),"the pledge do not exist");
+      check(quantity < pledge->pledge,"the quantity is biger then the pledge");
 
+      ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
+            b.pledge -= quantity;
+         });
    }
 
    void pledge::getreward( const account_name& pledger,
