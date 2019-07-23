@@ -220,6 +220,54 @@ namespace eosio {
                                   const name& type,
                                   const asset& stake ) {
       require_auth( name{voter} );
+
+      // All fix-time voting is new
+      const auto& vote_data = fix_time_vote_info::get_data_by_typ( type );
+      check( static_cast<bool>(vote_data), "fix time vote type error" );
+
+      const auto& freeze_block_num = std::get<1>( *vote_data ) * BLOCK_NUM_PER_DAY;
+      const auto& vote_power = std::get<2>( *vote_data );
+
+      //print_f( "vote fix % % by % %\n", 
+      //         name{voter}, name{bpname}, freeze_block_num, vote_power );
+
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
+
+      check( stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token" );
+      check( 0 < stake.amount && stake.amount % 10000 == 0,
+             "need stake quantity >= 0 and quantity is integer" );
+      check( stake <= act.available, "need stake quantity <= your available balance" );
+
+      const auto curr_block_num = current_block_num();
+
+      check( !is_producer_in_blacklist( bpname ),
+             "bp is not active, cannot add stake for vote" );
+
+      const auto vote_stake_by_power = stake * vote_power;
+
+      // Add fix vote data
+      fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
+      fix_time_votes_tbl.emplace( get_self(), [&]( fix_time_vote_info& fvi ) { 
+         fvi.key                  = fix_time_votes_tbl.available_primary_key();
+         fvi.voter                = voter;
+         fvi.fvote_typ            = type;
+         fvi.start_block_num      = curr_block_num;
+         fvi.withdraw_block_num   = curr_block_num + freeze_block_num;
+         fvi.vote                 = stake;
+         fvi.votepower_age.staked = vote_stake_by_power;
+      } );
+
+      // modify account token
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
+         a.available -= stake; 
+      } );
+
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
+         b.add_total_staked( curr_block_num, vote_stake_by_power.amount );
+      } );
+
+      on_change_total_staked( curr_block_num, vote_stake_by_power.amount );
    }
 
    void system_contract::revotefix( const account_name& voter,

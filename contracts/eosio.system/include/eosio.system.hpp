@@ -20,13 +20,13 @@ namespace eosio {
    using eosforce::CORE_SYMBOL;
    using eosforce::CORE_SYMBOL_PRECISION;
 
-   static constexpr uint32_t BLOCK_NUM_PER_DAY = 24 * 60 * 20;
-   static constexpr uint32_t FROZEN_DELAY      = 3 * BLOCK_NUM_PER_DAY;
-   static constexpr int NUM_OF_TOP_BPS         = 23;
-   static constexpr int BLOCK_REWARDS_BP       = 27000;
-   static constexpr int BLOCK_REWARDS_B1       = 3000;
-   static constexpr uint32_t UPDATE_CYCLE      = NUM_OF_TOP_BPS * 5; // every num blocks update
-   static constexpr uint32_t REWARD_B1_CYCLE   = NUM_OF_TOP_BPS * 100;
+   static constexpr uint32_t BLOCK_NUM_PER_DAY     = 24 * 60 * 20;
+   static constexpr uint32_t FROZEN_DELAY          = 3 * BLOCK_NUM_PER_DAY;
+   static constexpr int NUM_OF_TOP_BPS             = 23;
+   static constexpr int BLOCK_REWARDS_BP           = 27000;
+   static constexpr int BLOCK_REWARDS_B1           = 3000;
+   static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
+   static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;

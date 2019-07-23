@@ -14,6 +14,9 @@ namespace eosio {
    using eosforce::CORE_SYMBOL;
    using eosforce::CORE_SYMBOL_PRECISION;
 
+   static constexpr uint64_t FIX_TIME_VOTE_POWER_M = 5;  // now vote power will be 0.2, so fix-time vote power will * 5
+
+
    /**
     *  From EOSForce FIP#7, There is two type vote : current voting and fix-time voting
     *  
@@ -43,6 +46,27 @@ namespace eosio {
          wait_claim, wait_unfreeze,
          unfreezed
       };
+
+      // fix vote type, NOTE Just Can Add New TYPE, NO CHANGE LAST!!!!!
+      // only can change fix-time num
+      using fix_vote_data_t = std::tuple<name, uint32_t, uint64_t>;
+      constexpr static auto fix_vote_typ_data = std::array<fix_vote_data_t, 4>{{
+         { "fvote.a"_n,   3 * 30,   1 * FIX_TIME_VOTE_POWER_M }, 
+         { "fvote.b"_n,   6 * 30,   2 * FIX_TIME_VOTE_POWER_M }, 
+         { "fvote.c"_n,  12 * 30,   4 * FIX_TIME_VOTE_POWER_M }, 
+         { "fvote.d"_n,  24 * 30,   8 * FIX_TIME_VOTE_POWER_M }
+      }};
+      // fix-time type not too much ( <= 8 ), so just find by for each
+      inline static std::optional<fix_vote_data_t> get_data_by_typ( const name& typ ) {
+         for( const auto& i : fix_vote_typ_data ) {
+            if( std::get<0>(i) == typ ) {
+               return i;
+            }
+         }
+
+         return std::optional<fix_vote_data_t>();
+      }
+
 
       uint64_t     key                = 0; // add by available_primary_key()
       account_name voter              = 0;
