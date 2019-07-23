@@ -94,10 +94,18 @@ namespace eosio {
          });
    }
 
-   void pledge::getreward( const account_name& pledger,
+   void pledge::getreward( const account_name& rewarder,
                                  const asset& quantity,
                                  const string& memo ){
+      require_auth( name{rewarder} );
+      reward_info rew_tbl(get_self(),rewarder);
+      auto reward_inf = rew_tbl.find(quantity.symbol.code().raw());
+      check(reward_inf != rew_tbl.end(),"the reward do not exist");
+      check(reward_inf->reward.amount > 0,"the reward do not enough to get");
 
+      rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
+         b.reward -= b.reward;
+      });
    }
 
 } /// namespace eosio
