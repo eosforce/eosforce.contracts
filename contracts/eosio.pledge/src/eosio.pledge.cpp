@@ -98,7 +98,7 @@ namespace eosio {
                                  const asset& quantity,
                                  const string& memo ){
       require_auth( name{rewarder} );
-      reward_info rew_tbl(get_self(),rewarder);
+      rewards rew_tbl(get_self(),rewarder);
       auto reward_inf = rew_tbl.find(quantity.symbol.code().raw());
       check(reward_inf != rew_tbl.end(),"the reward do not exist");
       check(reward_inf->reward.amount > 0,"the reward do not enough to get");
@@ -106,6 +106,42 @@ namespace eosio {
       rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
          b.reward -= b.reward;
       });
+   }
+
+   void pledge::allotreward(const name& pledge_name,
+                                 const account_name& pledger, 
+                                 const account_name& rewarder,
+                                 const asset& quantity,
+                                 const string& memo ) {
+      pledgetypes pt_tbl(get_self(),get_self().value);
+      auto type = pt_tbl.find(pledge_name.value);
+      check(type != pt_tbl.end(),"the pledge type do not exist");
+      check(quantity.symbol.code() == type->pledge.symbol.code(),"the symbol do not match");
+      require_auth( name{type->deduction_account} );
+
+      pledges ple_tbl(get_self(),pledger);
+      auto pledge = ple_tbl.find(pledge_name.value);
+      check(pledge != ple_tbl.end(),"the pledge do not exist");
+      auto pre_allot = pledge->deduction;
+      if (pledge->pledge < asset(0,pledge->pledge.symbol)) {
+         pre_allot += pledge->pledge;
+      }
+      check(quantity < pre_allot,"the quantity is biger then the deduction");
+      ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
+            b.deduction -= quantity;
+         });
+      rewards rew_tbl(get_self(),rewarder);
+      auto reward_inf = rew_tbl.find(quantity.symbol.code().raw());
+      if (reward_inf == rew_tbl.end()) {
+         rew_tbl.emplace( name{type->deduction_account}, [&]( reward_info& b ) { 
+            b.reward = quantity;
+         });
+      }
+      else {
+         rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
+            b.reward += quantity;
+         });
+      }
    }
 
 } /// namespace eosio

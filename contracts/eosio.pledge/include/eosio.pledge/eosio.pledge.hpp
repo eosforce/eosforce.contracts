@@ -71,6 +71,11 @@ namespace eosio {
          [[eosio::action]] void getreward( const account_name& rewarder,
                                        const asset& quantity,
                                        const string& memo );
+         [[eosio::action]] void allotreward(const name& pledge_name,
+                                       const account_name& pledger, 
+                                       const account_name& rewarder,
+                                       const asset& quantity,
+                                       const string& memo );
    };
 
 } /// namespace eosio
