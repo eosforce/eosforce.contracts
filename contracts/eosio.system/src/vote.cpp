@@ -183,19 +183,22 @@ namespace eosio {
       const auto curr_block_num = current_block_num();
 
       const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
-
       const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
-      votes_table votes_tbl( _self, voter );
+      votes_table votes_tbl( get_self(), voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
-      const int64_t newest_voteage = vts.voteage.get_age( curr_block_num );
-      const int64_t newest_total_voteage = bp.get_age( curr_block_num );
+      const auto newest_voteage = vts.voteage.get_age( curr_block_num );
+      const auto newest_total_voteage = bp.get_age( curr_block_num );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
-      int128_t amount_voteage = (int128_t)bp.rewards_pool.amount * (int128_t)newest_voteage;
-      const auto& reward = asset( static_cast<int64_t>( (int128_t)amount_voteage / (int128_t)newest_total_voteage ),CORE_SYMBOL );
-      check( 0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
+      const auto amount_voteage = 
+           static_cast<int128_t>(bp.rewards_pool.amount) 
+         * static_cast<int128_t>(newest_voteage);
+      const auto& reward = asset{
+         static_cast<int64_t>( amount_voteage / static_cast<int128_t>(newest_total_voteage) ), 
+         CORE_SYMBOL };
+      check( asset{0, CORE_SYMBOL} <= reward && reward <= bp.rewards_pool,
             "need 0 <= claim reward quantity <= rewards_pool" );
 
       _accounts.modify( act, name{0}, [&]( account_info& a ) { 
