@@ -31,6 +31,7 @@ namespace eosio {
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = bpname;
             v.voteage.staked = stake;
+            v.voteage.update_height = curr_block_num;
          } );
       } else {
          change = stake.amount - vts->voteage.staked.amount;
@@ -100,6 +101,7 @@ namespace eosio {
          votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
             v.bpname = tobp;
             v.voteage.staked = restake;
+            v.voteage.update_height = curr_block_num;
          } );
       } else {
          votes_tbl.modify( vtst, name{0}, [&]( vote_info& v ) {
@@ -252,14 +254,15 @@ namespace eosio {
       // Add fix vote data
       fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
       fix_time_votes_tbl.emplace( name{voter}, [&]( fix_time_vote_info& fvi ) { 
-         fvi.key                  = fix_time_votes_tbl.available_primary_key();
-         fvi.voter                = voter;
-         fvi.bpname               = bpname;
-         fvi.fvote_typ            = type;
-         fvi.start_block_num      = curr_block_num;
-         fvi.withdraw_block_num   = curr_block_num + freeze_block_num;
-         fvi.vote                 = stake;
-         fvi.votepower_age.staked = vote_stake_by_power;
+         fvi.key                         = fix_time_votes_tbl.available_primary_key();
+         fvi.voter                       = voter;
+         fvi.bpname                      = bpname;
+         fvi.fvote_typ                   = type;
+         fvi.start_block_num             = curr_block_num;
+         fvi.withdraw_block_num          = curr_block_num + freeze_block_num;
+         fvi.vote                        = stake;
+         fvi.votepower_age.staked        = vote_stake_by_power;
+         fvi.votepower_age.update_height = curr_block_num;
       } );
 
       // modify account token
