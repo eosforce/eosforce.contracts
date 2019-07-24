@@ -312,8 +312,47 @@ namespace eosio {
    void system_contract::outfixvote( const account_name& voter,
                                      const uint64_t& key ) {
       require_auth( name{voter} );
+
+      fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
+      const auto fitr = fix_time_votes_tbl.find( key );
+      check( fitr != fix_time_votes_tbl.end(), "no found fix time votes info" );
+
+      const auto curr_block_num = current_block_num();
+
+      const auto& act = _accounts.get( voter, "voter is not found in accounts table" );
+      const auto& bp = _bps.get( fitr->bpname, "bpname is not registered" );
+
+      check( fitr->withdraw_block_num <= curr_block_num, 
+             "fix-time vote not reach withdraw block num" );
+      check( !fitr->is_withdraw, "fix-time vote has withdraw" );
+
+      votes_table votes_tbl( get_self(), voter );
+      auto vts = votes_tbl.find( fitr->bpname );
+      if( vts == votes_tbl.end() ) {
+         votes_tbl.emplace( name{voter}, [&]( vote_info& v ) {
+            v.bpname = fitr->bpname;
+            v.unstaking += fitr->vote;
+            v.unstake_height = curr_block_num;
+         } );
+      } else {
+         votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
+            v.unstaking += fitr->vote;
+            v.unstake_height = curr_block_num;
+         } );
+      }
+
+      fix_time_votes_tbl.modify( fitr, name{0}, [&]( fix_time_vote_info& fvi ) {
+         fvi.vote = asset{ 0, CORE_SYMBOL};
+         fvi.is_withdraw = true;
+      } );
+
+      const auto change_by_power = -fitr->votepower_age.staked.amount;
+
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) {
+         b.add_total_staked( curr_block_num, change_by_power );
+      } );
+
+      on_change_total_staked( curr_block_num, change_by_power );
    }
-
-
 
 } // namespace eosio
