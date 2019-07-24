@@ -190,18 +190,41 @@ namespace eosio {
       votes_table votes_tbl( get_self(), voter );
       const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
 
-      const auto newest_voteage = vts.voteage.get_age( curr_block_num );
+      // current vote voteage
+      auto newest_voteage = vts.voteage.get_age( curr_block_num );
       const auto newest_total_voteage = bp.get_age( curr_block_num );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
-      const auto amount_voteage = 
-           static_cast<int128_t>(bp.rewards_pool.amount) 
-         * static_cast<int128_t>(newest_voteage);
+      // for fix-time vote
+      fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
+      auto idx_for_bp = fix_time_votes_tbl.get_index<"bybp"_n>();
+      for( auto fvi = idx_for_bp.find( bpname ); 
+           fvi != idx_for_bp.end() && fvi->bpname == bpname; ) {
+         // if fix-time vote has been withdraw_block_num, no reward to it
+         auto calc_block_num = curr_block_num;
+         if( calc_block_num > fvi->withdraw_block_num ){
+            calc_block_num = fvi->withdraw_block_num;
+         }
+         const auto voteage_value = fvi->votepower_age.get_age( calc_block_num );
+         newest_voteage += voteage_value;
+
+         if( !fvi->is_withdraw ) {
+            idx_for_bp.modify( fvi, name{0}, [&]( fix_time_vote_info& v ) {
+               v.votepower_age.clean_age( calc_block_num );
+            } );
+            ++fvi;
+         } else {
+            fvi = idx_for_bp.erase( fvi );
+         }
+      }
+
+      const auto amount_voteage = static_cast<int128_t>(bp.rewards_pool.amount) * static_cast<int128_t>(newest_voteage);
       const auto& reward = asset{
          static_cast<int64_t>( amount_voteage / static_cast<int128_t>(newest_total_voteage) ), 
          CORE_SYMBOL };
-      check( asset{0, CORE_SYMBOL} <= reward && reward <= bp.rewards_pool,
-            "need 0 <= claim reward quantity <= rewards_pool" );
+
+      check( (reward.amount >= 0) && (reward.amount <= bp.rewards_pool.amount),
+             "need 0 <= claim reward quantity <= rewards_pool" );
 
       _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += reward; 

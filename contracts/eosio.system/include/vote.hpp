@@ -67,7 +67,6 @@ namespace eosio {
          return std::optional<fix_vote_data_t>();
       }
 
-
       uint64_t     key                = 0; // add by available_primary_key()
       account_name voter              = 0;
       account_name bpname             = 0;
@@ -79,9 +78,12 @@ namespace eosio {
       bool         is_withdraw        = false;
 
       uint64_t primary_key() const { return key; }
+      uint64_t by_bp()const        { return bpname; }
 
       // TODO: need use vote type by fvote_typ
       inline state get_state( const uint32_t curr_block_num ) const { return state::nil; }
    };
-   typedef eosio::multi_index<"fixvotes"_n, fix_time_vote_info> fix_time_votes_table;
+   typedef eosio::multi_index< "fixvotes"_n, fix_time_vote_info, 
+                               indexed_by<"bybp"_n, const_mem_fun<fix_time_vote_info, uint64_t, &fix_time_vote_info::by_bp>>
+                             > fix_time_votes_table;
 } // namespace eosio
