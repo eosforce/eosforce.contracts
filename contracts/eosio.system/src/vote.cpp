@@ -248,9 +248,10 @@ namespace eosio {
 
       // Add fix vote data
       fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
-      fix_time_votes_tbl.emplace( get_self(), [&]( fix_time_vote_info& fvi ) { 
+      fix_time_votes_tbl.emplace( name{voter}, [&]( fix_time_vote_info& fvi ) { 
          fvi.key                  = fix_time_votes_tbl.available_primary_key();
          fvi.voter                = voter;
+         fvi.bpname               = bpname;
          fvi.fvote_typ            = type;
          fvi.start_block_num      = curr_block_num;
          fvi.withdraw_block_num   = curr_block_num + freeze_block_num;
@@ -274,6 +275,37 @@ namespace eosio {
                                     const uint64_t& key,
                                     const account_name& bpname ) {
       require_auth( name{voter} );
+
+      fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
+      const auto fitr = fix_time_votes_tbl.find( key );
+      check( fitr != fix_time_votes_tbl.end(), "no found fix time votes info" );
+
+      check( fitr->bpname != bpname, "from and to cannot same" );
+      check( !is_producer_in_blacklist( bpname ),
+             "bp is not active, cannot add stake for vote" );
+
+      const auto& bpf = _bps.get( fitr->bpname, "bpname is not registered" );
+      const auto& bpt = _bps.get( bpname, "bpname is not registered" );
+
+      const auto curr_block_num = current_block_num();
+
+
+      // TODO: First Need Give voter All Rewards from vote to frombp
+      // TODO: Next Need change to tobp, delete early stake and voteage info
+
+      //fix_time_votes_tbl.modify( bp, name{0}, [&]( fix_time_vote_info& fvi ) {
+      //   fvi.bpname = bpname;
+      //} );
+
+      _bps.modify( bpf, name{0}, [&]( bp_info& b ) {
+         b.add_total_staked( curr_block_num, -fitr->votepower_age.staked );
+      } );
+
+      _bps.modify( bpt, name{0}, [&]( bp_info& b ) {
+         b.add_total_staked( curr_block_num, fitr->votepower_age.staked );
+      } );
+
+      // no change total staked so no need on_change_total_staked
    }
 
    // take out stake to a fix-time vote by voter after vote is timeout

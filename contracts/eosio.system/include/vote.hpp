@@ -70,6 +70,7 @@ namespace eosio {
 
       uint64_t     key                = 0; // add by available_primary_key()
       account_name voter              = 0;
+      account_name bpname             = 0;
       name         fvote_typ          = name{ 0 };
       assetage     votepower_age;
       asset        vote               = asset{ 0, CORE_SYMBOL };
