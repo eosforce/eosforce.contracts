@@ -199,18 +199,12 @@ namespace eosio {
       fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
       auto idx_for_bp = fix_time_votes_tbl.get_index<"bybp"_n>();
       for( auto fvi = idx_for_bp.find( bpname ); 
-           fvi != idx_for_bp.end() && fvi->bpname == bpname; ) {
-         // if fix-time vote has been withdraw_block_num, no reward to it
-         auto calc_block_num = curr_block_num;
-         if( calc_block_num > fvi->withdraw_block_num ){
-            calc_block_num = fvi->withdraw_block_num;
-         }
-         const auto voteage_value = fvi->votepower_age.get_age( calc_block_num );
-         newest_voteage += voteage_value;
+           fvi != idx_for_bp.end() && fvi->bpname == bpname; /*nothing*/ ) {
+         newest_voteage += fvi->get_age( curr_block_num );
 
          if( !fvi->is_withdraw ) {
             idx_for_bp.modify( fvi, name{0}, [&]( fix_time_vote_info& v ) {
-               v.votepower_age.clean_age( calc_block_num );
+               v.clean_age( curr_block_num );
             } );
             ++fvi;
          } else {
@@ -305,26 +299,33 @@ namespace eosio {
                                     const account_name& bpname ) {
       require_auth( name{voter} );
 
+      const auto curr_block_num = current_block_num();
+
       fix_time_votes_table fix_time_votes_tbl( get_self(), voter );
       const auto fitr = fix_time_votes_tbl.find( key );
       check( fitr != fix_time_votes_tbl.end(), "no found fix time votes info" );
 
       check( fitr->bpname != bpname, "from and to cannot same" );
+      check( !fitr->is_withdraw, "fix-time vote has withdraw" );
+      check( fitr->withdraw_block_num > curr_block_num, "fix-time vote need withdraw, has timeout" );
+
       check( !is_producer_in_blacklist( bpname ),
              "bp is not active, cannot add stake for vote" );
 
       const auto& bpf = _bps.get( fitr->bpname, "bpname is not registered" );
       const auto& bpt = _bps.get( bpname, "bpname is not registered" );
 
-      const auto curr_block_num = current_block_num();
-
 
       // TODO: First Need Give voter All Rewards from vote to frombp
       // TODO: Next Need change to tobp, delete early stake and voteage info
+      // Current version revotefix need claim first!!!
+      check( fitr->get_age( curr_block_num ) == 0, 
+             "need push claim action before revotefix" );
 
-      //fix_time_votes_tbl.modify( bp, name{0}, [&]( fix_time_vote_info& fvi ) {
-      //   fvi.bpname = bpname;
-      //} );
+      fix_time_votes_tbl.modify( fitr, name{0}, [&]( fix_time_vote_info& fvi ) {
+         fvi.bpname = bpname;
+         fvi.clean_age( curr_block_num );
+      } );
 
       _bps.modify( bpf, name{0}, [&]( bp_info& b ) {
          b.add_total_staked( curr_block_num, -fitr->votepower_age.staked );

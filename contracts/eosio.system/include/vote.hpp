@@ -81,7 +81,25 @@ namespace eosio {
       uint64_t by_bp()const        { return bpname; }
 
       // TODO: need use vote type by fvote_typ
-      inline state get_state( const uint32_t curr_block_num ) const { return state::nil; }
+      inline state get_state( const uint32_t& curr_block_num ) const { return state::nil; }
+
+      inline int64_t get_age( const uint32_t& curr_block_num ) const { 
+         // if fix-time vote has been withdraw_block_num, no reward to it
+         auto calc_block_num = curr_block_num;
+         if( calc_block_num > withdraw_block_num ) {
+            calc_block_num = withdraw_block_num;
+         }
+         return votepower_age.get_age( calc_block_num );
+      }
+
+      inline void clean_age( const uint32_t& curr_block_num ) {
+         // if fix-time vote has been withdraw_block_num, no reward to it
+         auto calc_block_num = curr_block_num;
+         if( calc_block_num > withdraw_block_num ) {
+            calc_block_num = withdraw_block_num;
+         }
+         votepower_age.clean_age( calc_block_num );
+      }
    };
    typedef eosio::multi_index< "fixvotes"_n, fix_time_vote_info, 
                                indexed_by<"bybp"_n, const_mem_fun<fix_time_vote_info, uint64_t, &fix_time_vote_info::by_bp>>
