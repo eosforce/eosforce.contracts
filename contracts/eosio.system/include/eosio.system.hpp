@@ -9,7 +9,7 @@
 
 #include <eosforce/assetage.hpp>
 #include "native.hpp"
-#include <vote.hpp>
+#include "vote.hpp"
 
 namespace eosio {
 

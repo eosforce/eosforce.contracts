@@ -62,9 +62,9 @@ namespace eosio {
 
          [[eosio::on_notify("eosio::transfer")]]
          void addpledge( const account_name& from,
-                                          const account_name& to,
-                                          const asset& quantity,
-                                          const string& memo );
+                                       const account_name& to,
+                                       const asset& quantity,
+                                       const string& memo );
 
          [[eosio::action]] void deduction( const name& pledge_name,
                                        const account_name& debitee,

@@ -26,9 +26,9 @@ namespace eosio {
    }
 
    void pledge::addpledge( const account_name& from,
-                                       const account_name& to,
-                                       const asset& quantity,
-                                       const string& memo ){
+                           const account_name& to,
+                           const asset& quantity,
+                           const string& memo ){
       if (to != get_self().value || memo.length() == 0) return ;
       require_auth( name{from} );
       pledgetypes pt_tbl(get_self(),get_self().value);
@@ -51,20 +51,17 @@ namespace eosio {
             b.pledge += quantity;
          });
       }
-      // todo 
-      // transfer_action temp{ eosio_account, { {name{pledger}, active_permission} } };
-      // temp.send(  pledger, pledge_account.value, quantity, std::string("add pledge") );
-
    }
 
    void pledge::deduction( const name& pledge_name,
-                                 const account_name& debitee,
-                                 const asset& quantity,
-                                 const string& memo ){
+                           const account_name& debitee,
+                           const asset& quantity,
+                           const string& memo ){
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto type = pt_tbl.find(pledge_name.value);
       check(type != pt_tbl.end(),"the pledge type do not exist");
       check(quantity.symbol.code() == type->pledge.symbol.code(),"the symbol do not match");
+      check(0 < quantity.amount,"the quantity should be a positive number");
       require_auth( name{type->deduction_account} );
 
       pledges ple_tbl(get_self(),debitee);
@@ -85,9 +82,9 @@ namespace eosio {
    }
 
    void pledge::withdraw( const name& pledge_name,
-                                 const account_name& pledger,
-                                 const asset& quantity,
-                                 const string& memo ){
+                           const account_name& pledger,
+                           const asset& quantity,
+                           const string& memo ){
       require_auth( name{pledger} );
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto type = pt_tbl.find(pledge_name.value);
@@ -98,41 +95,38 @@ namespace eosio {
       auto pledge = ple_tbl.find(pledge_name.value);
       check(pledge != ple_tbl.end(),"the pledge do not exist");
       check(quantity < pledge->pledge,"the quantity is biger then the pledge");
+      check(asset(0,pledge->pledge.symbol) < quantity,"the quantity must be a positive number");
 
       ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
-            b.pledge -= quantity;
-         });
+         b.pledge -= quantity;
+      });
 
-      // todo
       transfer_action temp{ eosio_account, {  {get_self(), active_permission} } };
       temp.send(  get_self().value, pledger, quantity, std::string("withdraw pledge") );
    }
 
    void pledge::getreward( const account_name& rewarder,
-                                 const asset& quantity,
-                                 const string& memo ){
+                           const asset& quantity,
+                           const string& memo ){
       require_auth( name{rewarder} );
       rewards rew_tbl(get_self(),rewarder);
       auto reward_inf = rew_tbl.find(quantity.symbol.code().raw());
       check(reward_inf != rew_tbl.end(),"the reward do not exist");
       check(reward_inf->reward.amount > 0,"the reward do not enough to get");
 
-      // todo
       transfer_action temp{ eosio_account, {  {pledge_account, active_permission} } };
       temp.send(  pledge_account.value, rewarder, reward_inf->reward, std::string("get reward") );
 
       rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
          b.reward -= b.reward;
       });
- 
-
    }
 
    void pledge::allotreward(const name& pledge_name,
-                                 const account_name& pledger, 
-                                 const account_name& rewarder,
-                                 const asset& quantity,
-                                 const string& memo ) {
+                           const account_name& pledger, 
+                           const account_name& rewarder,
+                           const asset& quantity,
+                           const string& memo ) {
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto type = pt_tbl.find(pledge_name.value);
       check(type != pt_tbl.end(),"the pledge type do not exist");
@@ -146,10 +140,12 @@ namespace eosio {
       if (pledge->pledge < asset(0,pledge->pledge.symbol)) {
          pre_allot += pledge->pledge;
       }
+      check(0 < quantity.amount,"the quantity must be a positive number");
       check(quantity <= pre_allot,"the quantity is biger then the deduction");
       ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
-            b.deduction -= quantity;
-         });
+         b.deduction -= quantity;
+      });
+
       rewards rew_tbl(get_self(),rewarder);
       auto reward_inf = rew_tbl.find(quantity.symbol.code().raw());
       if (reward_inf == rew_tbl.end()) {
@@ -165,8 +161,8 @@ namespace eosio {
    }
 
    void pledge::open(const name& pledge_name,
-                                    const account_name& payer,
-                                    const string& memo) {
+                     const account_name& payer,
+                     const string& memo) {
       require_auth( name{payer} );
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto type = pt_tbl.find(pledge_name.value);
@@ -174,18 +170,20 @@ namespace eosio {
 
       pledges ple_tbl(get_self(),payer);
       auto pledge = ple_tbl.find(pledge_name.value);
-      if (pledge != ple_tbl.end()) return ;
+      if (pledge != ple_tbl.end()) {
+         return ;
+      }
 //      check(pledge == ple_tbl.end(),"the pledge record has exist");
       ple_tbl.emplace( name{payer}, [&]( pledge_info& b ) { 
-            b.pledge_name = pledge_name;
-            b.pledge = asset(0,type->pledge.symbol);
-            b.deduction = asset(0,type->pledge.symbol);
-         });
+         b.pledge_name = pledge_name;
+         b.pledge = asset(0,type->pledge.symbol);
+         b.deduction = asset(0,type->pledge.symbol);
+      });
 
    }
    void pledge::close(const name& pledge_name,
-                                    const account_name& payer,
-                                    const string& memo) {
+                     const account_name& payer,
+                     const string& memo) {
       require_auth( name{payer} );
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto type = pt_tbl.find(pledge_name.value);
