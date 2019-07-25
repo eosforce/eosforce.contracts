@@ -8,6 +8,7 @@
 #include <eosio/eosio.hpp>
 
 #include <string>
+#include <eosforce/assetage.hpp>
 
 namespace eosio {
    class system_contract;
@@ -16,6 +17,7 @@ namespace eosio {
 namespace eosio {
 
    using std::string;
+   using eosforce::CORE_SYMBOL;
 
    static constexpr eosio::name eosio_account{"eosio"_n};
    static constexpr eosio::name pledge_account{"eosio.pledge"_n};
@@ -58,10 +60,11 @@ namespace eosio {
                                        const asset& quantity,
                                        const string& memo );
 
-         [[eosio::action]] void addpledge( const name& pledge_name,
-                                       const account_name& pledger,
-                                       const asset& quantity,
-                                       const string& memo );
+         [[eosio::on_notify("eosio::transfer")]]
+         void addpledge( const account_name& from,
+                                          const account_name& to,
+                                          const asset& quantity,
+                                          const string& memo );
 
          [[eosio::action]] void deduction( const name& pledge_name,
                                        const account_name& debitee,
@@ -79,6 +82,28 @@ namespace eosio {
                                        const account_name& rewarder,
                                        const asset& quantity,
                                        const string& memo );
+         [[eosio::action]] void open(const name& pledge_name,
+                                    const account_name& payer,
+                                    const string& memo);
+         [[eosio::action]] void close(const name& pledge_name,
+                                    const account_name& payer,
+                                    const string& memo);
+
+         using addtype_action     = eosio::action_wrapper<"addtype"_n,     &pledge::addtype>;
+         //using addpledge_action     = eosio::action_wrapper<"addpledge"_n,     &pledge::addpledge>;
+         using deduction_action     = eosio::action_wrapper<"deduction"_n,     &pledge::deduction>;
+         using withdraw_action     = eosio::action_wrapper<"withdraw"_n,     &pledge::withdraw>;
+         using getreward_action     = eosio::action_wrapper<"getreward"_n,     &pledge::getreward>;
+         using allotreward_action     = eosio::action_wrapper<"allotreward"_n,     &pledge::allotreward>;
+         using open_action     = eosio::action_wrapper<"open"_n,     &pledge::open>;
+         using close_action     = eosio::action_wrapper<"close"_n,     &pledge::close>;
+
+         static asset get_pledge( const name& pledge_name,const account_name& pledger ) {
+            pledges pledge_tbl(pledge_account,pledger);
+            auto pledge_inf = pledge_tbl.find(pledge_name.value);
+            if (pledge_inf == pledge_tbl.end()) return asset(0,CORE_SYMBOL);
+            return pledge_inf->pledge;
+         }
    };
 
 } /// namespace eosio
