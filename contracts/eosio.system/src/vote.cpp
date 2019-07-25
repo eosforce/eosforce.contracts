@@ -188,10 +188,18 @@ namespace eosio {
       const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
       votes_table votes_tbl( get_self(), voter );
-      const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
+      const auto& vts = votes_tbl.find( bpname );
+
+      auto newest_voteage = 0;
 
       // current vote voteage
-      auto newest_voteage = vts.voteage.get_age( curr_block_num );
+      if( vts != votes_tbl.end() ) {
+         newest_voteage += vts->voteage.get_age( curr_block_num );
+         votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
+            v.voteage.clean_age( curr_block_num );
+         } );
+      }
+
       const auto newest_total_voteage = bp.get_age( curr_block_num );
       check( 0 < newest_total_voteage, "claim is not available yet" );
 
@@ -222,10 +230,6 @@ namespace eosio {
 
       _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += reward; 
-      } );
-
-      votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
-         v.voteage.clean_age( curr_block_num );
       } );
 
       _bps.modify( bp, name{0}, [&]( bp_info& b ) {
