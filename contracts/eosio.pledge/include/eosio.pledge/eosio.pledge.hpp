@@ -9,7 +9,7 @@
 
 #include <string>
 
-namespace eosiosystem {
+namespace eosio {
    class system_contract;
 }
 
@@ -17,7 +17,9 @@ namespace eosio {
 
    using std::string;
 
-   static constexpr name eosio_account = "eosio"_n;
+   static constexpr eosio::name eosio_account{"eosio"_n};
+   static constexpr eosio::name pledge_account{"eosio.pledge"_n};
+   static constexpr eosio::name active_permission{"active"_n};
 
    class [[eosio::contract("eosio.pledge")]] pledge : public contract {
       public:
@@ -52,6 +54,7 @@ namespace eosio {
       public:
          [[eosio::action]] void addtype( const name& pledge_name,
                                        const account_name& deduction_account,
+                                       const account_name& ram_payer,
                                        const asset& quantity,
                                        const string& memo );
 

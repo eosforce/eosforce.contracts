@@ -8,7 +8,7 @@
 #include <string>
 
 #include <eosforce/assetage.hpp>
-#include <native.hpp>
+#include "native.hpp"
 
 namespace eosio {
 

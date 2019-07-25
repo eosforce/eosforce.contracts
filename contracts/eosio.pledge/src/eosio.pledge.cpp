@@ -5,16 +5,19 @@
 
 #include <eosio.pledge/eosio.pledge.hpp>
 
+#include <../../eosio.system/include/eosio.system.hpp>
+
 namespace eosio {
    void pledge::addtype( const name& pledge_name,
                         const account_name& deduction_account,
+                        const account_name& ram_payer,
                         const asset& quantity,
                         const string& memo ) {
-      require_auth( eosio_account );
+      require_auth( name{ram_payer} );
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto old_type = pt_tbl.find(pledge_name.value);
       check(old_type == pt_tbl.end(),"the pledge type has exist");
-      pt_tbl.emplace( eosio_account, [&]( pledge_type& s ) {
+      pt_tbl.emplace( name{ram_payer}, [&]( pledge_type& s ) {
          s.pledge_name = pledge_name;
          s.deduction_account = deduction_account;
          s.pledge = quantity;
@@ -45,6 +48,10 @@ namespace eosio {
             b.pledge += quantity;
          });
       }
+      // todo 
+      transfer_action temp{ eosio_account, { {name{pledger}, active_permission} } };
+      temp.send(  pledger, pledge_account.value, quantity, std::string("add pledge") );
+
    }
 
    void pledge::deduction( const name& pledge_name,
@@ -92,6 +99,10 @@ namespace eosio {
       ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
             b.pledge -= quantity;
          });
+
+      // todo
+      transfer_action temp{ eosio_account, {  {pledge_account, active_permission} } };
+      temp.send(  pledge_account.value, pledger, quantity, std::string("withdraw pledge") );
    }
 
    void pledge::getreward( const account_name& rewarder,
@@ -106,6 +117,10 @@ namespace eosio {
       rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
          b.reward -= b.reward;
       });
+      // todo
+      transfer_action temp{ eosio_account, {  {pledge_account, active_permission} } };
+      temp.send(  pledge_account.value, rewarder, quantity, std::string("get reward") );
+
    }
 
    void pledge::allotreward(const name& pledge_name,
