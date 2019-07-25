@@ -251,6 +251,9 @@ namespace eosio {
    using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
    using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
    using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
+   using votefix_action      = eosio::action_wrapper<"votefix"_n,      &system_contract::votefix>;
+   using revotefix_action    = eosio::action_wrapper<"revotefix"_n,    &system_contract::revotefix>;
+   using outfixvote_action   = eosio::action_wrapper<"outfixvote"_n,   &system_contract::outfixvote>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {
