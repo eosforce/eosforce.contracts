@@ -9,6 +9,7 @@
 
 #include <eosforce/assetage.hpp>
 #include "native.hpp"
+#include <vote.hpp>
 
 namespace eosio {
 
@@ -18,13 +19,13 @@ namespace eosio {
    using eosforce::CORE_SYMBOL;
    using eosforce::CORE_SYMBOL_PRECISION;
 
-   static constexpr uint32_t BLOCK_NUM_PER_DAY = 24 * 60 * 20;
-   static constexpr uint32_t FROZEN_DELAY      = 3 * BLOCK_NUM_PER_DAY;
-   static constexpr int NUM_OF_TOP_BPS         = 23;
-   static constexpr int BLOCK_REWARDS_BP       = 27000;
-   static constexpr int BLOCK_REWARDS_B1       = 3000;
-   static constexpr uint32_t UPDATE_CYCLE      = NUM_OF_TOP_BPS * 5; // every num blocks update
-   static constexpr uint32_t REWARD_B1_CYCLE   = NUM_OF_TOP_BPS * 100;
+   static constexpr uint32_t BLOCK_NUM_PER_DAY     = 24 * 60 * 20;
+   static constexpr uint32_t FROZEN_DELAY          = 3 * BLOCK_NUM_PER_DAY;
+   static constexpr int NUM_OF_TOP_BPS             = 23;
+   static constexpr int BLOCK_REWARDS_BP           = 27000;
+   static constexpr int BLOCK_REWARDS_B1           = 3000;
+   static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
+   static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
@@ -205,6 +206,21 @@ namespace eosio {
 
          [[eosio::action]] void unfreezeram( const account_name& voter, const account_name& bpname );
 
+         // make a fix-time vote by voter to bpname with stake token
+         // type is fix-time type, 
+         [[eosio::action]] void votefix( const account_name& voter,
+                                         const account_name& bpname,
+                                         const name& type,
+                                         const asset& stake );
+
+         [[eosio::action]] void revotefix( const account_name& voter,
+                                           const uint64_t& key,
+                                           const account_name& bpname );
+
+         // take out stake to a fix-time vote by voter after vote is timeout
+         [[eosio::action]] void outfixvote( const account_name& voter,
+                                            const uint64_t& key );
+
          [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
 
          [[eosio::action]] void onblock( const block_timestamp& timestamp,
@@ -234,6 +250,9 @@ namespace eosio {
    using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
    using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
    using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
+   using votefix_action      = eosio::action_wrapper<"votefix"_n,      &system_contract::votefix>;
+   using revotefix_action    = eosio::action_wrapper<"revotefix"_n,    &system_contract::revotefix>;
+   using outfixvote_action   = eosio::action_wrapper<"outfixvote"_n,   &system_contract::outfixvote>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {
