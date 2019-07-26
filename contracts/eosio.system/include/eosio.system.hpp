@@ -27,6 +27,8 @@ namespace eosio {
    static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
    static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
    static constexpr uint32_t BP_CYCLE_BLOCK_OUT    = 1;
+   static constexpr uint32_t BASE_BLOCK_OUT_WEIGHT = 1000;
+   static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
@@ -200,6 +202,11 @@ namespace eosio {
          void reward_bps( const std::vector<name>& block_producers,
                           const uint32_t curr_block_num,
                           const time_point_sec& current_time_sec );
+
+         void reward_block(const uint32_t curr_block_num,
+                           const account_name& bpname,
+                           const uint32_t schedule_version,
+                           const bool is_change_producers);
 
          template< typename VOTE_TYP >
          int64_t vote_by_typ_imp( const account_name& voter,
