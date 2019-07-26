@@ -22,15 +22,16 @@ namespace eosio {
          // onblock should not error
          return;
       }
-
+      uint32_t pre_block_out = 0;
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
+         reward_block(curr_block_num,bpname,schedule_version,true);
          schs_tbl.emplace( name{bpname}, [&]( schedule_info& s ) {
             s.version = schedule_version;
             s.block_height = curr_block_num;
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               s.producers[i].amount = block_producers[i] == name{bpname} ? 1 : 0;
+               s.producers[i].amount = 0;
                s.producers[i].bpname = block_producers[i].value;
             }
          } );
@@ -38,11 +39,22 @@ namespace eosio {
          schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
                if( s.producers[i].bpname == bpname ) {
-                  s.producers[i].amount += 1;
+                  pre_block_out = s.producers[i].amount;
                   break;
                }
             }
          } );
+      }
+
+      uint32_t bp_last_amount = 0;
+      bpmonitor_table bpm_tbl( get_self(), get_self().value );
+      auto monitor_bp = bpm_tbl.find(bpname);
+      if (monitor_bp != bpm_tbl.end()) {
+         bp_last_amount = monitor_bp->last_block_num;
+      }
+
+      if (pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
+         reward_block(curr_block_num,bpname,schedule_version,false);
       }
 
       const auto current_time_sec = time_point_sec( current_time_point() );
@@ -66,6 +78,16 @@ namespace eosio {
       if( curr_block_num % UPDATE_CYCLE == 0 ) {
          update_elected_bps();
       }
+
+      sch = schs_tbl.find( uint64_t( schedule_version ) );
+      schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
+         for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+            if( s.producers[i].bpname == bpname ) {
+               s.producers[i].amount += 1;
+               break;
+            }
+         }
+      });
    }
 
    void system_contract::update_elected_bps() {
