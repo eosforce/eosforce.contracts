@@ -27,12 +27,12 @@ namespace eosio {
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
          reward_block(curr_block_num,bpname,schedule_version,true);
-         schs_tbl.emplace( name{bpname}, [&]( schedule_info& s ) {
+         schs_tbl.emplace( eosforce::system_account, [&]( schedule_info& s ) {
             s.version = schedule_version;
             s.block_height = curr_block_num;
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               s.producers[i].amount = 0;
-               s.producers[i].bpname = block_producers[i].value;
+               schedule_info::producer temp_producer{block_producers[i].value,static_cast<uint32_t>(block_producers[i] == name{bpname} ? 1 : 0)};
+               s.producers.push_back(temp_producer);
             }
          } );
       } else {

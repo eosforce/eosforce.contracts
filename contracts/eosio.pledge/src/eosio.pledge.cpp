@@ -13,12 +13,12 @@ namespace eosio {
                         const account_name& ram_payer,
                         const asset& quantity,
                         const string& memo ) {
-      require_auth( system_account );
+      require_auth( eosforce::system_account );
       pledgetypes pt_tbl(get_self(),get_self().value);
       auto old_type = pt_tbl.find(pledge_name.value);
       check(old_type == pt_tbl.end(),"the pledge type has exist");
 
-      pt_tbl.emplace( system_account, [&]( pledge_type& s ) {
+      pt_tbl.emplace( eosforce::system_account, [&]( pledge_type& s ) {
          s.pledge_name = pledge_name;
          s.deduction_account = deduction_account;
          s.pledge = quantity;
@@ -101,7 +101,7 @@ namespace eosio {
          b.pledge -= quantity;
       });
 
-      transfer_action temp{ system_account, {  {get_self(), active_permission} } };
+      transfer_action temp{ eosforce::system_account, {  {get_self(), active_permission} } };
       temp.send(  get_self().value, pledger, quantity, std::string("withdraw pledge") );
    }
 
@@ -114,7 +114,7 @@ namespace eosio {
       check(reward_inf != rew_tbl.end(),"the reward do not exist");
       check(reward_inf->reward.amount > 0,"the reward do not enough to get");
 
-      transfer_action temp{ system_account, {  {pledge_account, active_permission} } };
+      transfer_action temp{ eosforce::system_account, {  {pledge_account, active_permission} } };
       temp.send(  pledge_account.value, rewarder, reward_inf->reward, std::string("get reward") );
 
       rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {

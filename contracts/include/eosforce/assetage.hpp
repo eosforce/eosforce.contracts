@@ -43,6 +43,9 @@ namespace eosforce {
    using eosio::symbol;
    using eosio::symbol_code;
    using eosio::asset;
+   using eosio::name;
+   
+   static constexpr eosio::name system_account{"eosio"_n};
 
    // asset age : asset age is a value equal asset * age by block num, in eosforce
    //             it used in many pos.

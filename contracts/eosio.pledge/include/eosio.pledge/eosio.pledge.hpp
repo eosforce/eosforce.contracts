@@ -19,7 +19,7 @@ namespace eosio {
    using std::string;
    using eosforce::CORE_SYMBOL;
 
-   static constexpr eosio::name system_account{"eosio"_n};
+   
    static constexpr eosio::name pledge_account{"eosio.pledge"_n};
    static constexpr eosio::name active_permission{"active"_n};
 
@@ -30,7 +30,7 @@ namespace eosio {
       private:
          struct [[eosio::table]] pledge_type {
             name              pledge_name       = name{};
-            account_name      deduction_account = system_account.value;
+            account_name      deduction_account = eosforce::system_account.value;
             asset             pledge            = asset(0,CORE_SYMBOL);
 
             uint64_t primary_key()const { return pledge_name.value; }
