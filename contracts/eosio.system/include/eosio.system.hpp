@@ -155,7 +155,6 @@ namespace eosio {
       uint64_t primary_key() const { return current_block_num; }
    };
 
-
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -169,7 +168,7 @@ namespace eosio {
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
    typedef eosio::multi_index<"blockreward"_n, block_reward>          blockreward_table;
    typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
-   typedef eosio::multi_index<"drainblocks"_n,   drain_block_info>      drainblock_table;
+   typedef eosio::multi_index<"drainblocks"_n,   drain_block_info>    drainblock_table;
 
    /**
     * @defgroup system_contract eosio.system

@@ -22,11 +22,12 @@ namespace eosio {
          // onblock should not error
          return;
       }
-      uint32_t pre_block_out = 0;
+      int32_t pre_block_out = 0;
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
          reward_block(curr_block_num,bpname,schedule_version,true);
+
          schs_tbl.emplace( eosforce::system_account, [&]( schedule_info& s ) {
             s.version = schedule_version;
             s.block_height = curr_block_num;
@@ -34,26 +35,24 @@ namespace eosio {
                schedule_info::producer temp_producer{block_producers[i].value,static_cast<uint32_t>(block_producers[i] == name{bpname} ? 1 : 0)};
                s.producers.push_back(temp_producer);
             }
-         } );
+         });
       } else {
-         schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
-            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               if( s.producers[i].bpname == bpname ) {
-                  pre_block_out = s.producers[i].amount;
-                  break;
-               }
+         for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+            if( sch->producers[i].bpname == bpname ) {
+               pre_block_out = sch->producers[i].amount;
+               break;
             }
-         } );
+         }
       }
 
-      uint32_t bp_last_amount = 0;
+      int32_t bp_last_amount = 0;
       bpmonitor_table bpm_tbl( get_self(), get_self().value );
       auto monitor_bp = bpm_tbl.find(bpname);
       if (monitor_bp != bpm_tbl.end()) {
          bp_last_amount = monitor_bp->last_block_num;
       }
 
-      if (pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
+      if (static_cast<int32_t>(pre_block_out - bp_last_amount) >= static_cast<int32_t>(BP_CYCLE_BLOCK_OUT)) {
          reward_block(curr_block_num,bpname,schedule_version,false);
       }
 
@@ -79,15 +78,16 @@ namespace eosio {
          update_elected_bps();
       }
 
-      sch = schs_tbl.find( uint64_t( schedule_version ) );
-      schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
-         for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-            if( s.producers[i].bpname == bpname ) {
-               s.producers[i].amount += 1;
-               break;
+      if (sch != schs_tbl.end()) {
+         schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
+            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+               if( s.producers[i].bpname == bpname ) {
+                  s.producers[i].amount += 1;
+                  break;
+               }
             }
-         }
-      });
+         });
+      }
    }
 
    void system_contract::update_elected_bps() {
@@ -268,6 +268,7 @@ namespace eosio {
          }
 
          auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
+         auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;      
          if (ifirst <= i && i < ilast){  
             drain_num += 1;
          }
@@ -275,9 +276,9 @@ namespace eosio {
             drain_num += 1;
          }
 
-         if (is_change_producers) { drain_num = 0;}
+         if (is_change_producers) { drain_num -= 1;}
 
-         if (drain_num <= 0 && monitor_bp->consecutive_drain_block > 0) {
+         if (drain_num <= 0 && monitor_bp->consecutive_drain_block > 2) {
             drainblock_table drainblock_tbl(get_self(),sch->producers[i].bpname);
             drainblock_tbl.emplace( get_self(), [&]( drain_block_info& s ) { 
                s.current_block_num = static_cast<uint64_t>(curr_block_num);
@@ -286,7 +287,12 @@ namespace eosio {
          }
 
          bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
-            s.last_block_num = sch->producers[i].amount;
+            if (is_change_producers) {
+               s.last_block_num = 0;
+            }
+            else {
+               s.last_block_num = sch->producers[i].amount;
+            }
             if (drain_num > 0) {
                s.consecutive_drain_block += drain_num;
                s.total_drain_block += drain_num;
@@ -294,7 +300,7 @@ namespace eosio {
             }
             else {
                s.consecutive_drain_block = 0;
-               s.consecutive_produce_block += BP_CYCLE_BLOCK_OUT;
+               s.consecutive_produce_block += producer_num;
             }
          });
 
