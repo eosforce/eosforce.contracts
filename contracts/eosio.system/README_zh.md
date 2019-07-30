@@ -173,4 +173,69 @@ EOSForce中, 用户基于核心代币投票, 实行“一票一投”的投票�
 
 EOSForce中, 所有的投票都是基于用户对BP来存储和操作的。 下面是投票选举相关的action介绍:
 
+### 3.1 vote 投票
+
+```cpp
+   [[eosio::action]] void vote( const account_name& voter,
+                                const account_name& bpname,
+                                const asset& stake );
+```
+
+修改voter账户对bpname的投票总额为stake.
+
+参数:
+
+- voter : 投票者
+- bpname : 节点
+- statke : 票对应的Token
+
+最小权限:
+
+- voter@active
+
+注意:
+
+1. voter是修改用户对某一BP的投票数, 也就是说, 投票数大于当前票数，为增加投票, 投票数小于当前票数，则为撤回投票
+2. 根据投票数会减少相应用户余额
+3. 增加节点的总票数, 结算节点当前总票龄
+
+实例:
+
+### 3.2 更换投票
+
+**更换投票**可以使用户在不冻结用户Token的情况下更换用户所投的节点.
+
+```cpp
+void revote( const account_name voter,
+             const account_name frombp,
+             const account_name tobp,
+             const asset restake ) {
+```
+
+参数:
+
+- voter : 投票者
+- frombp : 原来所投节点
+- tobp : 换投节点
+- restake : 更换票数（eos金额）
+
+最小权限:
+
+- voter@active
+
+示例:
+
+假设 `testa` 用户投了 `biosbpa` 节点 `5000.0000 EOS`,
+此时用户希望改投 `biosbpb` 节点 `2000.0000 EOS`, 则可以执行:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio revote '{"voter":"testa","frombp":"biosbpa","tobp":"biosbpb","restake":"2000.0000 EOS"}' -p testa
+executed transaction: 526054c5f4a2d5f2aff91abc21699fde0e93a1f7895cb6d9b34742c2834ae2f2  152 bytes  280 us
+#         eosio <= eosio::onfee                 {"actor":"testa","fee":"0.2000 EOS","bpname":""}
+#         eosio <= eosio::revote                {"voter":"testa","frombp":"biosbpa","tobp":"biosbpb","restake":"2000.0000 EOS"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
+在执行之后用户投给`biosbpa`节点的Token为`3000.0000 EOS`,而投给`biosbpb`节点的Token增加了`2000.0000 EOS`.
+
 ## 4. BP监控机制
