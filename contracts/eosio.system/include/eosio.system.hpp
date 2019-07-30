@@ -26,9 +26,13 @@ namespace eosio {
    static constexpr int BLOCK_REWARDS_B1           = 3000;
    static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
    static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
+   static constexpr uint32_t BP_CYCLE_BLOCK_OUT    = 1;
+   static constexpr uint32_t BASE_BLOCK_OUT_WEIGHT = 1000;
+   static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
+   static constexpr name bp_reward_name     = "bpreward"_n;
 
    // tables
    struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
@@ -119,6 +123,38 @@ namespace eosio {
       uint64_t primary_key() const { return bpname; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.system")]] block_reward {
+      account_name   name    = bp_reward_name.value;
+      account_name   last_standard_bp;
+      asset          reward_block_out;
+      asset          reward_budget;
+
+      uint64_t       total_block_age;
+      uint32_t       last_reward_block_num;
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] bp_monitor {
+      account_name bpname;
+      uint32_t       last_block_num;               //The number of blocks in the previous round
+      uint32_t       consecutive_drain_block;      // Number of consecutive drain blocks
+      uint32_t       consecutive_produce_block;    // Number of consecutive produce blocks
+      uint32_t       total_drain_block;            // Number of total drain blocks
+      uint32_t       stability;
+      uint64_t       bock_age;
+      bool           can_be_punished = false;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] drain_block_info {
+      uint64_t       current_block_num;
+      uint32_t       drain_block_num;
+
+      uint64_t primary_key() const { return current_block_num; }
+   };
+
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -130,6 +166,9 @@ namespace eosio {
    typedef eosio::multi_index<"heartbeat"_n,   heartbeat_info>        hb_table;
    typedef eosio::multi_index<"blackpro"_n,    producer_blacklist>    blackproducer_table;
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
+   typedef eosio::multi_index<"blockreward"_n, block_reward>          blockreward_table;
+   typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
+   typedef eosio::multi_index<"drainblocks"_n,   drain_block_info>    drainblock_table;
 
    /**
     * @defgroup system_contract eosio.system
@@ -162,6 +201,11 @@ namespace eosio {
          void reward_bps( const std::vector<name>& block_producers,
                           const uint32_t curr_block_num,
                           const time_point_sec& current_time_sec );
+
+         void reward_block(const uint32_t curr_block_num,
+                           const account_name& bpname,
+                           const uint32_t schedule_version,
+                           const bool is_change_producers);
 
          template< typename VOTE_TYP >
          int64_t vote_by_typ_imp( const account_name& voter,

@@ -22,10 +22,12 @@ namespace eosio {
          // onblock should not error
          return;
       }
-
+      int32_t pre_block_out = 0;
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
+         reward_block(curr_block_num,bpname,schedule_version,true);
+
          schs_tbl.emplace( eosforce::system_account, [&]( schedule_info& s ) {
             s.version = schedule_version;
             s.block_height = curr_block_num;
@@ -33,16 +35,25 @@ namespace eosio {
                schedule_info::producer temp_producer{block_producers[i].value,static_cast<uint32_t>(block_producers[i] == name{bpname} ? 1 : 0)};
                s.producers.push_back(temp_producer);
             }
-         } );
+         });
       } else {
-         schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
-            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               if( s.producers[i].bpname == bpname ) {
-                  s.producers[i].amount += 1;
-                  break;
-               }
+         for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+            if( sch->producers[i].bpname == bpname ) {
+               pre_block_out = sch->producers[i].amount;
+               break;
             }
-         } );
+         }
+      }
+
+      int32_t bp_last_amount = 0;
+      bpmonitor_table bpm_tbl( get_self(), get_self().value );
+      auto monitor_bp = bpm_tbl.find(bpname);
+      if (monitor_bp != bpm_tbl.end()) {
+         bp_last_amount = monitor_bp->last_block_num;
+      }
+
+      if (static_cast<int32_t>(pre_block_out - bp_last_amount) >= static_cast<int32_t>(BP_CYCLE_BLOCK_OUT)) {
+         reward_block(curr_block_num,bpname,schedule_version,false);
       }
 
       const auto current_time_sec = time_point_sec( current_time_point() );
@@ -65,6 +76,17 @@ namespace eosio {
 
       if( curr_block_num % UPDATE_CYCLE == 0 ) {
          update_elected_bps();
+      }
+
+      if (sch != schs_tbl.end()) {
+         schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
+            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+               if( s.producers[i].bpname == bpname ) {
+                  s.producers[i].amount += 1;
+                  break;
+               }
+            }
+         });
       }
    }
 
@@ -191,5 +213,102 @@ namespace eosio {
             a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
          } );
       }
+   }
+
+   void system_contract::reward_block( const uint32_t curr_block_num,
+                                       const account_name& bpname,
+                                       const uint32_t schedule_version,
+                                       const bool is_change_producers) {
+      blockreward_table br_tbl(get_self(), get_self().value);
+      auto cblockreward = br_tbl.find( bp_reward_name.value);
+      if (cblockreward == br_tbl.end()) {
+         if (is_change_producers) {
+            br_tbl.emplace( get_self(), [&]( block_reward& s ) {
+               s.name = bp_reward_name.value;
+               s.reward_block_out = asset(0, CORE_SYMBOL);
+               s.reward_budget = asset(0, CORE_SYMBOL);
+               s.last_standard_bp = bpname;
+               s.total_block_age = 0;
+               s.last_reward_block_num = curr_block_num;
+            });
+         }
+         return ;
+      }
+
+      auto last_version = schedule_version;
+      if (is_change_producers) last_version -= 1;
+      schedules_table schs_tbl( get_self(), get_self().value );
+      auto sch = schs_tbl.find( uint64_t( last_version ) );
+      bpmonitor_table bpm_tbl( get_self(), get_self().value );
+      uint32_t ifirst = 0,ilast = 0;
+      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         if( sch->producers[i].bpname == bpname ) {
+            ilast = i;
+         }
+         if (sch->producers[i].bpname == cblockreward->last_standard_bp) {
+            ifirst = i;
+         }
+      }
+
+      uint64_t total_block_age = 0;
+      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         auto monitor_bp = bpm_tbl.find(sch->producers[i].bpname);
+         if (monitor_bp == bpm_tbl.end()) {
+            bpm_tbl.emplace( get_self(), [&]( bp_monitor& s ) {
+               s.bpname = sch->producers[i].bpname;
+               s.last_block_num = 0;
+               s.consecutive_drain_block = 0;
+               s.consecutive_produce_block = 0;
+               s.total_drain_block = 0;
+               s.stability = BASE_BLOCK_OUT_WEIGHT;
+               s.bock_age = 0;
+               s.can_be_punished = false;
+            });
+            monitor_bp = bpm_tbl.find(sch->producers[i].bpname);
+         }
+
+         auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
+         auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;      
+         if (ifirst <= i && i < ilast){  
+            drain_num += 1;
+         }
+         else if (ifirst > ilast && (ifirst <= i || i < ilast)) {
+            drain_num += 1;
+         }
+
+         if (is_change_producers) { drain_num -= 1;}
+
+         if (drain_num <= 0 && monitor_bp->consecutive_drain_block > 2) {
+            drainblock_table drainblock_tbl(get_self(),sch->producers[i].bpname);
+            drainblock_tbl.emplace( get_self(), [&]( drain_block_info& s ) { 
+               s.current_block_num = static_cast<uint64_t>(curr_block_num);
+               s.drain_block_num = monitor_bp->consecutive_drain_block;
+            });
+         }
+
+         bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+            if (is_change_producers) {
+               s.last_block_num = 0;
+            }
+            else {
+               s.last_block_num = sch->producers[i].amount;
+            }
+            if (drain_num > 0) {
+               s.consecutive_drain_block += drain_num;
+               s.total_drain_block += drain_num;
+               s.consecutive_produce_block = 0;
+            }
+            else {
+               s.consecutive_drain_block = 0;
+               s.consecutive_produce_block += producer_num;
+            }
+         });
+
+      }
+
+      br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {
+         s.last_standard_bp = bpname;
+         s.last_reward_block_num = curr_block_num;
+      });
    }
 } /// namespace eosio
