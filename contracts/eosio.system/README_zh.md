@@ -410,4 +410,30 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ### 3.4 撤回定期投票
 
+当区块高度到达一笔定期投票的解锁高度之后, 用户需要手动解除定期投票,
+其中锁定的token将会计入赎回中的token中, 在赎回冻结期到达之后可以赎回为系统代币.
+
+```cpp
+         // take out stake to a fix-time vote by voter after vote is timeout
+         [[eosio::action]] void outfixvote( const account_name& voter,
+                                            const uint64_t& key );
+```
+
+参数:
+
+- voter : 投票者
+- key : 定期投票的id, 即表中的key字段
+
+最小权限:
+
+- voter@active
+
+实例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio outfixvote '["testc","0"]' -p testc
+```
+
+> 注意此时之后, fixvotes表中对应项的**is_withdraw**会为true, 在执行`claim`之后会被删去.
+
 ## 4. BP监控机制
