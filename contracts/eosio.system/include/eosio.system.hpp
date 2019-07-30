@@ -143,7 +143,8 @@ namespace eosio {
       uint32_t       total_drain_block;            // Number of total drain blocks
       uint32_t       stability;
       uint64_t       bock_age;
-      bool           can_be_punished = false;
+      uint32_t       bp_status;
+      uint32_t       end_punish_block;
 
       uint64_t primary_key() const { return bpname; }
    };
