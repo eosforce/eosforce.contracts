@@ -341,6 +341,73 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ### 3.3 更换定期投票节点
 
+在定期投票的过程中, 用户可以随时更换所投的节点, 更换过程不会影响任何投票本身的状态.
+
+```cpp
+         [[eosio::action]] void revotefix( const account_name& voter,
+                                           const uint64_t& key,
+                                           const account_name& bpname );
+```
+
+参数:
+
+- voter : 投票者
+- key : 定期投票的id, 即表中的key字段
+- bpname : 转投的bp
+
+最小权限:
+
+- voter@active
+
+> **需要注意的是**, 更换定期投票要保证当前用户没有未领取的分红, 所以发送更换定期投票action之前要先领取奖励
+
+如下, 在一个transaction中先执行`claim` action, 再执行 `revotefix` action:
+
+执行的trx json:
+
+```json
+{
+    "actions": [
+        {
+            "account": "eosio",
+            "name": "claim",
+            "authorization": [
+                {
+                    "actor": "testd",
+                    "permission": "active"
+                }
+            ],
+            "data": {
+                "voter": "testd",
+                "bpname": "biosbpc"
+            }
+        },
+        {
+            "account": "eosio",
+            "name": "revotefix",
+            "authorization": [
+                {
+                    "actor": "testd",
+                    "permission": "active"
+                }
+            ],
+            "data": {
+                "voter": "testd",
+                "key": "0",
+                "bpname": "biosbpd"
+            }
+        }
+    ],
+    "transaction_extensions":[]
+}
+```
+
+执行:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push transaction ./revotefix.json
+```
+
 ### 3.4 撤回定期投票
 
 ## 4. BP监控机制
