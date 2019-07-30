@@ -238,4 +238,109 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 在执行之后用户投给`biosbpa`节点的Token为`3000.0000 EOS`,而投给`biosbpb`节点的Token增加了`2000.0000 EOS`.
 
+### 3.3 定期投票
+
+用户选择不同投票时间周期投票。定期投票期间代币处于锁定状态，到期可以解锁。
+时间不同将会对应权重，定期投票分红随时可以领取，定期投票到期后票数权重清零。
+
+每一笔定期投票单独的记录, 产生的RAM消耗由用户负担, 当区块高度到达一笔定期投票的解锁高度之后,
+用户需要手动解除定期投票, 其中锁定的token将会计入赎回中的token中, 在赎回冻结期到达之后可以赎回为系统代币.
+
+因为涉及到投票奖励, 所以当用户解除定期投票之后, 投票的信息并不会被删去, 系统只是简单的设置一个flag, 标示该定期投票已失效,
+在用户领取完投票奖励之后, 该信息会被删去, 并返还用户RAM.
+
+定期投票信息存储在`fixvotes`表中, 可以查询到:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get table eosio testd fixvotes
+{
+  "rows": [{
+      "key": 0,
+      "voter": "testd",
+      "bpname": "biosbpc",
+      "fvote_typ": "fvote.a",
+      "votepower_age": {
+        "staked": "500.0000 EOS",
+        "age": 0,
+        "update_height": 444
+      },
+      "vote": "100.0000 EOS",
+      "start_block_num": 444,
+      "withdraw_block_num": 2592444,
+      "is_withdraw": 0
+    },{
+      "key": 1,
+      "voter": "testd",
+      "bpname": "biosbpc",
+      "fvote_typ": "fvote.a",
+      "votepower_age": {
+        "staked": "500.0000 EOS",
+        "age": 0,
+        "update_height": 446
+      },
+      "vote": "100.0000 EOS",
+      "start_block_num": 446,
+      "withdraw_block_num": 2592446,
+      "is_withdraw": 0
+    }
+  ],
+  "more": false
+}
+```
+
+其中字段信息如下:
+
+- key : id用来标示每笔投票, 注意这个key并非对于每笔投票都是唯一的, 被删除之后可能会重新加入.
+- voter : 投票者
+- bpname : 所投的节点
+- fvote_typ : 定期投票类型
+- votepower_age : 投票所产生的加权币龄, 用于计算投票奖励
+- vote : 实际投票的系统代币
+- start_block_num : 投票的开始区块高度
+- withdraw_block_num : 投票的截止区块高度
+- is_withdraw : 是否已被撤回, 如果为true, 说明已被撤回, 等待领取奖励之后删除.
+
+目前已有的**定期投票类型**如下
+
+|   类型   |   锁定区块高度   |   权重    |
+|----------|------------------|-----------|
+| fvote.a  | 2592000 (约30天)         | 1 |
+| fvote.b  | 5184000 (约60天)         | 2 |
+| fvote.c  | 10368000 (约120天)       | 4 |
+| fvote.d  | 20736000 (约240天)       | 8 |
+
+定期投票基于`votefix` action:
+
+```cpp
+         [[eosio::action]] void votefix( const account_name& voter,
+                                         const account_name& bpname,
+                                         const name& type,
+                                         const asset& stake );
+```
+
+参数:
+
+- voter : 投票者
+- bpname : 所投节点
+- type : 定期投票类型
+- stake : 投票的核心代币数量
+
+最小权限:
+
+- voter@active
+
+示例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS"]' -p testd
+executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.2500 EOS","bpname":""}
+#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS"}
+warning: transaction executed locally, but may not be confirmed by the network yet
+```
+
+### 3.3 更换定期投票节点
+
+### 3.4 撤回定期投票
+
 ## 4. BP监控机制
