@@ -109,4 +109,68 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ## 3. 选举机制
 
+EOSForce设计了完全不同于EOSIO的投票机制, 其选举机制的action也与EOSIO有很大区别。
+
+在EOSForce中投票分为两种: 活期投票和定期投票, 用户投票信息分别储存在`votes`表和`fixvotes`表中, 另外在EOSForce可以使用投票分红来抵扣RAM租金, 这方面的信息储存在`votes4ram`表和`vote4ramsum`表中。
+
+如`votes`表中，可以获取一个用户投票信息：
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get table eosio testd votes
+{
+  "rows": [{
+      "bpname": "biosbpa",
+      "voteage": {
+        "staked": "200.0000 EOS",
+        "age": 0,
+        "update_height": 176
+      },
+      "unstaking": "0.0000 EOS",
+      "unstake_height": 176
+    },{
+      "bpname": "biosbpb",
+      "voteage": {
+        "staked": "300.0000 EOS",
+        "age": 0,
+        "update_height": 179
+      },
+      "unstaking": "0.0000 EOS",
+      "unstake_height": 179
+    }
+  ],
+  "more": false
+}
+```
+
+对于BP, 其获取投票的信息在 `bps`表中, 同时BP的相关信息也在这个表中。
+
+关于以上几个表的具体信息，在`claim` action中有详细描述。
+
+可以通过cleos的get account命令（或者直接调用http api）来获取用户投票信息：
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get account testd
+created: 2018-05-28T12:00:00.000
+permissions:
+     owner     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+        active     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+memory:
+     quota:         8 KiB    used:     3.262 KiB
+
+EOS balances:
+     liquid:        19389.8400 EOS
+     total:         19389.8400 EOS
+
+current votes:
+     biosbpa          200.0000 EOS     unstaking:         0.0000 EOS
+     biosbpb          300.0000 EOS     unstaking:         0.0000 EOS
+     biosbpv          100.0000 EOS     unstaking:         0.0000 EOS
+```
+
+EOSForce中, 用户基于核心代币投票, 实行“一票一投”的投票方式, 对于活期投票, 用户使用`vote` action 投票,
+在投票之后, 用户可以随时通过 revote action 更换其所投的节点, 当用户决定撤出所投的票以换回核心代币时, 用户要先撤出原本投给节点的票,
+此时这些票处于“待解冻”状态, 需要等待锁定期(一般相当于3天的区块数)过后, 通过 unfreeze 将票转为核心代币。 定期投票的流程与活期基本一致。
+
+EOSForce中, 所有的投票都是基于用户对BP来存储和操作的。 下面是投票选举相关的action介绍:
+
 ## 4. BP监控机制
