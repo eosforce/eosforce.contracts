@@ -34,7 +34,7 @@ EOSForce的核心代币符号为EOS, 与EOSIO不同, EOSForce的核心代币不�
 账户的核心代币存储于系统账户下的`accounts`表中, 可以通过命令获取用户核心代币信息:
 
 ```bash
-./cleos -u https://w1.eosforce.cn:443 get table eosio eosio accounts -k eosforce
+./cleos -u https://w1.eosforce.cn:443 get table eosio eosio accounts -L eosforce -l 1
 {
   "rows": [{
       "name": "eosforce",
