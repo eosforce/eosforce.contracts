@@ -304,10 +304,10 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 |   类型   |   锁定区块高度   |   权重    |
 |----------|------------------|-----------|
-| fvote.a  | 2592000 (约30天)         | 1 |
-| fvote.b  | 5184000 (约60天)         | 2 |
-| fvote.c  | 10368000 (约120天)       | 4 |
-| fvote.d  | 20736000 (约240天)       | 8 |
+| fvote.a  | 2592000 (约90天)         | 1 |
+| fvote.b  | 5184000 (约180天)        | 2 |
+| fvote.c  | 10368000 (约360天)       | 4 |
+| fvote.d  | 20736000 (约720天)       | 8 |
 
 定期投票基于`votefix` action:
 
