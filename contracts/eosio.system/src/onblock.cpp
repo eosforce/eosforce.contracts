@@ -22,7 +22,7 @@ namespace eosio {
          // onblock should not error
          return;
       }
-      int32_t pre_block_out = 0;
+      uint32_t pre_block_out = 0;
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
@@ -32,7 +32,10 @@ namespace eosio {
             s.version = schedule_version;
             s.block_height = curr_block_num;
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               schedule_info::producer temp_producer{block_producers[i].value,static_cast<uint32_t>(block_producers[i] == name{bpname} ? 1 : 0)};
+               schedule_info::producer temp_producer {
+                  block_producers[i].value,
+                  block_producers[i] == name{bpname} ? 1u : 0u
+               };
                s.producers.push_back(temp_producer);
             }
          });
@@ -45,14 +48,14 @@ namespace eosio {
          }
       }
 
-      int32_t bp_last_amount = 0;
+      uint32_t bp_last_amount = 0;
       bpmonitor_table bpm_tbl( get_self(), get_self().value );
       auto monitor_bp = bpm_tbl.find(bpname);
       if (monitor_bp != bpm_tbl.end()) {
          bp_last_amount = monitor_bp->last_block_num;
       }
 
-      if (static_cast<int32_t>(pre_block_out - bp_last_amount) >= static_cast<int32_t>(BP_CYCLE_BLOCK_OUT)) {
+      if (pre_block_out > bp_last_amount && pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
          reward_block(curr_block_num,bpname,schedule_version,false);
       }
 
