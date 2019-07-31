@@ -436,4 +436,90 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 > 注意此时之后, fixvotes表中对应项的**is_withdraw**会为true, 在执行`claim`之后会被删去.
 
+### 3.5 获取投票奖励 `claim`
+
+#### 3.5.1 奖励的产生
+
+在EOSForce中, 系统会根据用户投票权重来分配奖励, 奖励通过出块节点的reward_pool分配, 所有的奖励以出块节点为单位领取和计算.
+
+出块节点的奖励信息在bp表中, 可以查询获得:
+
+```bash
+cleost get table eosio eosio bps -L biosbpa -l 1
+{
+  "rows": [{
+      "name": "biosbpa",
+      "block_signing_key": "EOS7R82SaGaJubv23GwXHyKT4qDCVXi66qkQrnjwmBUvdA4dyzEPG",
+      "commission_rate": 100,
+      "total_staked": 5000,
+      "rewards_pool": "160.2909 EOS",
+      "total_voteage": 0,
+      "voteage_update_height": 157,
+      "url": "https://www.eosforce.io/",
+      "emergency": 0
+    }
+  ],
+  "more": true
+}
+```
+
+`bps`表中每一项如下:
+
+- name : 出块节点账户名
+- block_signing_key : 出块节点出块签名公钥
+- commission_rate : 奖励分配率
+- total_staked : 当前出块节点加权票数总和, 注意这里的值是加权票数, 在EOSForce中 1个EOS对应P票, 根据投票类型不同P是不同的整数.
+- rewards_pool : 用户奖励池, 所有投给
+- total_voteage : 当前出块节点总加权票龄
+- voteage_update_height : 上次结算总票龄的区块高度
+- url : 出块节点URL
+
+另外当前所有加权投票数的总和可以在`gvotestat`表中直接查询到:
+
+```bash
+cleost get table eosio eosio gvotestat -L eosforce -l 1
+{
+  "rows": [{
+      "stat_name": "eosforce",
+      "total_staked": 5000
+    }
+  ],
+  "more": false
+}
+```
+
+这里`stat_name`为"eosforce"的一项就是全局数据, `total_staked`是当前加权票数的总和, 注意这里的值是加权票数, 在EOSForce中 1个EOS对应P票, 根据投票类型不同P是不同的整数.
+
+#### 3.5.2 用户投票分红权重
+
+**活期投票** : 活期投票信息在`votes`表中.
+
+**定期投票** : 定期投票信息在`fixvotes`表中.
+
+#### 3.5.3 领取投票奖励
+
+```cpp
+   [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
+```
+
+参数:
+
+- voter : 投票者
+- bpname : 要领取节点奖励
+
+最小权限:
+
+- voter@active
+
+示例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio claim '{"voter":"testd", "bpname":"biosbpa"}' -p testd
+executed transaction: 39da88642eb0d9aaab7a7f223e75ddd988efe583432da5bbb1fb0140eb9ec344  128 bytes  810 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.0300 EOS","bpname":""}
+#         eosio <= eosio::claim                 {"voter":"testd","bpname":"biosbpa"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
 ## 4. BP监控机制
+
