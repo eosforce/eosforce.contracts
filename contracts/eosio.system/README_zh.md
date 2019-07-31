@@ -490,11 +490,176 @@ cleost get table eosio eosio gvotestat -L eosforce -l 1
 
 这里`stat_name`为"eosforce"的一项就是全局数据, `total_staked`是当前加权票数的总和, 注意这里的值是加权票数, 在EOSForce中 1个EOS对应P票, 根据投票类型不同P是不同的整数.
 
-#### 3.5.2 用户投票分红权重
+#### 3.5.2 用户投票奖励计算
+
+用户投票奖励根据用户在一个超级节点中的加权投票票龄所占的比例来分配超级节点用户奖励池的奖励,
+
+在EOSForce中, 票龄 = 加权投票数 * 块高度间隔, 分红是根据票龄比例来分配的,
+在涉及到票龄的处理中会有以下三个变量:
+
+- 加权投票数
+- 当前已结算加权票龄
+- 当前已结算加权票龄时的块高度
+
+系统在处理 `投票加权值` 变更时会结算当前的票龄 将其存入 `当前已结算加权票龄` 中, 并同时记录此时的块高度到 `当前已结算加权票龄时的块高度` 中.
+这意味着 票龄 = 投票加权值 * (当前块高度 - 当前已结算加权票龄时的块高度) + 当前已结算加权票龄.
+
+这里分别计算活期投票加权票龄和定期投票加权票龄, 其和与节点票龄总和的比值即为用户在用户占奖励池的比例.
+
+下面是计算testd账户投biosbpa节点的奖励:
 
 **活期投票** : 活期投票信息在`votes`表中.
 
+通过api或者命令可以获取用户投票信息:
+
+```bash
+cleost get table eosio testd votes -L biosbpa -l 1
+{
+  "rows": [{
+      "bpname": "biosbpa",
+      "voteage": {
+        "staked": "50.0000 EOS",
+        "age": 8000000,
+        "update_height": 9000
+      },
+      "unstaking": "0.0000 EOS",
+      "unstake_height": 0
+    }
+  ],
+  "more": false
+}
+```
+
+注意这里是基于所投节点来查询,对于活期投票, 每个节点至多只有一项.
+
+这里`voteage`存储投票票龄相关信息:
+
+- bpname: 节点名称
+- voteage::staked : 当前投票加权值, 对于活期投票加权值即为投票代币总额
+- voteage::age : 当前已结算加权票龄
+- voteage::update_height : 当前已结算加权票龄时的块高度
+- unstaking : 当前正处于赎回状态的投票
+- unstake_height : 当unstaking不为零时, 代表可赎回的块高度, 当前块高度大于unstake_height时, 才能赎回.
+
+假设当前块高度为9100, 这里testd账户对于biosbpa节点的投票票龄为:
+
+$CurrVoteAge = age + staked \cdot (current\_block\_num - update\_height)$
+
+$CurrVoteAge = 8000000 + 50 \cdot (9100 - 9000) = 8005000$
+
+> 注意: 计算中 "50.0000 EOS" 对应的实际值为 500000, 系统代币的精度为4位, 而这里一个1EOS对应一票, 所以实际的amount要除10000
+
 **定期投票** : 定期投票信息在`fixvotes`表中.
+
+与活期投票不同, 一个账户对于一个节点会有多笔定期投票, 所以要分别计算求和:
+
+获取一个账户的定期投票需要通过索引查找对应某个节点的:
+
+```bash
+cleost get table eosio testd fixvotes --index 2 --key-type name -L biosbpa -U biosbpb
+{
+  "rows": [{
+      "key": 2,
+      "voter": "testd",
+      "bpname": "biosbpa",
+      "fvote_typ": "fvote.a",
+      "votepower_age": {
+        "staked": "1000.0000 EOS",
+        "age": 0,
+        "update_height": 8000
+      },
+      "vote": "200.0000 EOS",
+      "start_block_num": 8000,
+      "withdraw_block_num": 2602110,
+      "is_withdraw": 0
+    },{
+      "key": 3,
+      "voter": "testd",
+      "bpname": "biosbpa",
+      "fvote_typ": "fvote.a",
+      "votepower_age": {
+        "staked": "1500.0000 EOS",
+        "age": 0,
+        "update_height": 8500
+      },
+      "vote": "300.0000 EOS",
+      "start_block_num": 8500,
+      "withdraw_block_num": 2602114,
+      "is_withdraw": 0
+    }
+  ],
+  "more": false
+}
+```
+
+这里首先注意参数, fixvotes表的第二个索引依照bp进行索引, 索引类型为name, 所以有下面的参数:
+
+```bash
+--index 2
+--key-type name
+```
+
+如果要查找biosbpa的数据, 需要指定上界和下界, 下界即账户名, 上界为账户名的数值+1.
+
+查询出结果之后可以进行计算, 对于每一项有:
+
+- key : id用来标示每笔投票, 注意这个key并非对于每笔投票都是唯一的, 被删除之后可能会重新加入.
+- voter : 投票者
+- bpname : 所投的节点
+- fvote_typ : 定期投票类型
+- votepower_age::staked : 当前投票加权值, 对于活期投票加权值即为投票代币总额
+- votepower_age::age : 当前已结算加权票龄
+- votepower_age::update_height : 当前已结算加权票龄时的块高度
+- vote : 实际投票的系统代币
+- start_block_num : 投票的开始区块高度
+- withdraw_block_num : 投票的截止区块高度
+- is_withdraw : 是否已被撤回, 如果为true, 说明已被撤回, 等待领取奖励之后删除.
+
+计算票龄与活期类似, 假设当前块高度为9000, 这里testd账户对于biosbpa节点的投票票龄为:
+
+$FixVoteAge = ∑_{k∈{keys}}{(age_k + staked_k \cdot (current\_block\_num - update\_height_k))}$
+
+$FixVoteAge = (0 + 1000 * (9000 - 8000)) + (0 + 1500 * (9000 - 8500)) = 1750000$
+
+> 虽然在目前的设计中, 定期投票票数不会改变, 所以age会一直为0, 但是考虑到后续升级的可能, 计算时一定不能忽略
+
+当计算出用户对与节点的投票票龄之和后, 可以基于节点总投票票龄来计算将会获得的奖励:
+
+这里先获取节点总投票票龄:
+
+```bash
+cleost get table eosio eosio bps -L biosbpa -l 1
+{
+  "rows": [{
+      "name": "biosbpa",
+      "block_signing_key": "EOS7R82SaGaJubv23GwXHyKT4qDCVXi66qkQrnjwmBUvdA4dyzEPG",
+      "commission_rate": 100,
+      "total_staked": 20000,
+      "rewards_pool": "50000.0000 EOS",
+      "total_voteage": 54200000,
+      "voteage_update_height": 8500,
+      "url": "https://www.eosforce.io/",
+      "emergency": 0
+    }
+  ],
+  "more": true
+}
+```
+
+这里biosbpa的总投票票龄即为:
+
+$BPVoteAge_{biosbpa} = total\_voteage + total\_staked \cdot (current\_block\_num - voteage\_update\_height)$
+
+$BPVoteAge_{biosbpa} = 54200000 + 20000 * (9000 - 8500) = 64200000$
+
+则在9000区块高度, 用户testd能在biosbpa处投票获得的奖励为:
+
+$Reward = rewards\_pool \cdot \frac {∑_{}{FixAge} + ∑_{}{CurrAge}} {BPAge}$
+
+即:
+
+$Reward = 50000_{EOS} * \frac {1750000 + 8005000} {64200000} = 759.7352_{EOS}$
+
 
 #### 3.5.3 领取投票奖励
 
