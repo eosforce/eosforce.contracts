@@ -790,11 +790,13 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ### 3.8 赎回租赁内存的投票
 
-如上所述, 当撤回活期或定期投票后, 用户投票的token会进入unstaking状态,
-当当前块高度大于unstake_height后, 可以使用`unfreeze` action将投票赎回.
+当撤回用于抵扣RAM租金的投票之后, 用户投票的token会进入unstaking状态,
+当当前块高度大于unstake_height后, 可以使用`unfreezeram` action将投票赎回.
+
+注意, 这里所有信息是在`votes4ram_table`表中.
 
 ```cpp
-   [[eosio::action]] void unfreeze( const account_name& voter, const account_name& bpname );
+   [[eosio::action]] void unfreezeram( const account_name& voter, const account_name& bpname );
 ```
 
 参数:
@@ -809,10 +811,17 @@ warning: transaction executed locally, but may not be confirmed by the network y
 示例:
 
 ```bash
-./cleos -u https://w1.eosforce.cn:443 push action eosio unfreeze '{"voter":"testd", "bpname":"biosbpa"}' -p testd
+./cleos -u https://w1.eosforce.cn:443 push action eosio unfreezeram '{"voter":"testd", "bpname":"biosbpa"}' -p testd
 executed transaction: e0b52ec1a26008f3ca59c87d0521b2bab21a13e1d5b8abb35ab9cd43f5262ee1  128 bytes  610 us
 #         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.0300 EOS","bpname":""}
-#         eosio <= eosio::unfreeze              {"voter":"testd","bpname":"biosbpa"}
+#         eosio <= eosio::unfreezeram           {"voter":"testd","bpname":"biosbpa"}
 warning: transaction executed locally, but may not be confirmed by the network yet         ]
 ```
 
+## 4. BP相关
+
+### 4.1 注册BP
+
+### 4.2 BP心跳
+
+### 4.3 冻结BP
