@@ -101,7 +101,7 @@ namespace eosio {
          b.pledge -= quantity;
       });
 
-      transfer_action temp{ eosforce::system_account, {  {get_self(), active_permission} } };
+      transfer_action temp{ eosforce::system_account, {  {get_self(), eosforce::active_permission} } };
       temp.send(  get_self().value, pledger, quantity, std::string("withdraw pledge") );
    }
 
@@ -114,8 +114,8 @@ namespace eosio {
       check(reward_inf != rew_tbl.end(),"the reward do not exist");
       check(reward_inf->reward.amount > 0,"the reward do not enough to get");
 
-      transfer_action temp{ eosforce::system_account, {  {pledge_account, active_permission} } };
-      temp.send(  pledge_account.value, rewarder, reward_inf->reward, std::string("get reward") );
+      transfer_action temp{ eosforce::system_account, {  {eosforce::pledge_account, eosforce::active_permission} } };
+      temp.send(  eosforce::pledge_account.value, rewarder, reward_inf->reward, std::string("get reward") );
 
       rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
          b.reward -= b.reward;
