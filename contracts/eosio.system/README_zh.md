@@ -686,5 +686,76 @@ executed transaction: 39da88642eb0d9aaab7a7f223e75ddd988efe583432da5bbb1fb0140eb
 warning: transaction executed locally, but may not be confirmed by the network yet         ]
 ```
 
-## 4. BP监控机制
+### 3.6 投票奖励抵扣内存租金
 
+在EOSForce中, 用户可以使用投票奖励来抵扣RAM的租金, 这样不需用户持续支付租金.
+
+```cpp
+         [[eosio::action]] void vote4ram( const account_name& voter,
+                                          const account_name& bpname,
+                                          const asset& stake );
+```
+
+修改voter账户用来抵扣RAM的对bpname的投票总额为stake.
+
+EOSForce中, 租用RAM的多少是基于投票的代币数量来计算的, 系统的`res.ramrent`配置是设置100 EOS可以租用多少byte的内存, 默认是每100EOS可以租赁10kb内存, 通过get config可以查询, 如果没有查到, 则为默认值:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get config res.ramrent
+```
+
+一个用户的所有用于租赁RAM投票总和在`vote4ramsum`表中:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get table eosio eosio vote4ramsum -L testc -l 1
+{
+  "rows": [{
+      "voter": "testc",
+      "staked": "5000.0000 EOS"
+    }
+  ],
+  "more": false
+}
+```
+
+可以通过get account api来查询当前用户内存额度, 注意每个用户都有低保RAM:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get account testc
+created: 2018-05-28T12:00:00.000
+permissions:
+     owner     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+        active     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+memory:
+     quota:       508 KiB    used:     3.176 KiB
+
+EOS balances:
+     liquid:        12994.8800 EOS
+     total:         12994.8800 EOS
+
+```
+
+参数:
+
+- voter : 投票者
+- bpname : 节点
+- statke : 票对应的Token
+
+最小权限:
+
+- voter@active
+
+注意:
+
+1. 这里的逻辑与vote相同(实现也是基本相同), 区别是所有的信息在`votes4ram`表中
+2. 注意用户必须保证当前action执行后其账户RAM额度大于等于使用的RAM, 否则无法成功, 也就是说, 要撤回所有RAM的投票, 必须释放所有使用的内存.
+
+实例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio vote4ram '{"voter":"teste","bpname":"biosbpa","stake":"1500.0000 EOS"}' -p teste
+executed transaction: aba3997b8695ecd79e21cae1a35a3ee9229b122e1cf1f24ccaab2777b432fcc7  144 bytes  301 us
+#         eosio <= eosio::onfee                 {"actor":"teste","fee":"0.0500 EOS","bpname":""}
+#         eosio <= eosio::vote4ram              {"voter":"teste","bpname":"biosbpa","stake":"1500.0000 EOS"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
