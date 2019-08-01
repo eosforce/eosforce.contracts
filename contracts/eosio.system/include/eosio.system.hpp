@@ -14,6 +14,7 @@
 namespace eosio {
 
    using std::string;
+   using std::vector;
 
    using eosforce::assetage;
    using eosforce::CORE_SYMBOL;
@@ -30,6 +31,7 @@ namespace eosio {
    static constexpr uint32_t BASE_BLOCK_OUT_WEIGHT = 1000;
    static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9; 
    static constexpr int BLOCK_OUT_REWARD = 10000; 
+   static constexpr int PUNISH_BP_LIMIT = 50000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
@@ -157,6 +159,15 @@ namespace eosio {
       uint64_t primary_key() const { return current_block_num; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.system")]] punish_bp_info {
+      account_name punish_bp_name;
+      account_name proposaler;
+      vector<account_name> approve_bp;
+      uint32_t     effective_block_num;
+
+      uint64_t primary_key() const { return punish_bp_name; }
+   };
+
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -170,8 +181,8 @@ namespace eosio {
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
    typedef eosio::multi_index<"blockreward"_n, block_reward>          blockreward_table;
    typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
-   typedef eosio::multi_index<"drainblocks"_n,   drain_block_info>    drainblock_table;
-
+   typedef eosio::multi_index<"drainblocks"_n, drain_block_info>    drainblock_table;
+   typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -283,6 +294,7 @@ namespace eosio {
                                            const time_point_sec& timestamp );
 
          [[eosio::action]] void removebp( const account_name& bpname );
+         [[eosio::action]] void punishbp( const account_name& bpname,const account_name& proposaler );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;

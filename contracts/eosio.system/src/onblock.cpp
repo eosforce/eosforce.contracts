@@ -188,7 +188,13 @@ namespace eosio {
 
          pledges bp_pledge(eosforce::pledge_account,it->name);
          auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
-         if (pledge == bp_pledge.end() || pledge->pledge.amount <= 0) {
+         if ( pledge == bp_pledge.end() || pledge->pledge.amount <= 0 ) {
+            continue;
+         }
+
+         bpmonitor_table bpm_tbl( get_self(), get_self().value );
+         auto monitor_bp = bpm_tbl.find(it->name);
+         if ( monitor_bp != bpm_tbl.end() && monitor_bp->bp_status == 2 ) {
             continue;
          }
 
@@ -325,8 +331,8 @@ namespace eosio {
             if ((s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0) {
                s.stability += 1;
             }
-
          });
+         //扣除押金
       }
       auto total_producer_num = curr_block_num - cblockreward->last_reward_block_num;
       br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {
