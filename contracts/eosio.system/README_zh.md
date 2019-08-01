@@ -857,4 +857,40 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ### 4.2 BP心跳
 
+为了保证EOSForce主网的稳定性, EOSForce系统要求节点向链提交心跳Action,
+每个BP每个十分钟执行一次`heartbeat` action, 通常这个操作是基于heartbeat_plugin操作的, 以示为BP的节点正在运行,
+虽然bp可以通过开发一个定时程序完成相似的功能, 但是其综合成本将会高于启动实际的节点, 所以这一方式可以有效的促进整个网络的稳定.
+
+如果节点没有按时完成`heartbeat`, 系统将会扣除其收益.
+
+BP账户因为涉及到奖励代币, 所以往往不会暴露私钥到某种形式的“热”钱包中, 甚至于不会使用BP账户做操作.
+所以`heartbeat`不能直接基于BP账户来操作, 所以需要BP建立一个以出块公钥账户权限的账户用来执行`heartbeat`,
+
+配置 heartbeat_plugin 方式如下:
+
+这里假设BP的账户名为 bp.name, 出块签名公钥为 EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c,
+BP建立一个bp.ping账户, 其公钥为 EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c, 用来发送心跳.
+
+```bash
+bp-mapping=bp.name=KEY:bp.ping
+plugin=eosio::heartbeat_plugin
+```
+
+> 注意: 因为心跳同样需要手续费, 所以节点需要保证心跳发送账户的代币是否足够.
+
+```cpp
+   [[eosio::action]] void heartbeat( const account_name& bpname,
+                                     const time_point_sec& timestamp );
+```
+
+参数:
+
+- bpname : BP名字
+- time_point_sec : 未使用参数, 后续可以用来链上时间校准, 当前未生效
+
+最小权限:
+
+- bppingname@active
+
 ### 4.3 冻结BP
+
