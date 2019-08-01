@@ -759,3 +759,60 @@ executed transaction: aba3997b8695ecd79e21cae1a35a3ee9229b122e1cf1f24ccaab2777b4
 #         eosio <= eosio::vote4ram              {"voter":"teste","bpname":"biosbpa","stake":"1500.0000 EOS"}
 warning: transaction executed locally, but may not be confirmed by the network yet         ]
 ```
+
+### 3.7 赎回投票
+
+如上所述, 当撤回活期或定期投票后, 用户投票的token会进入unstaking状态,
+当当前块高度大于unstake_height后, 可以使用`unfreeze` action将投票赎回.
+
+```cpp
+   [[eosio::action]] void unfreeze( const account_name& voter, const account_name& bpname );
+```
+
+参数:
+
+- voter : 投票者
+- bpname : 要撤回投票所属的节点
+
+最小权限:
+
+- voter@active
+
+示例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio unfreeze '{"voter":"testd", "bpname":"biosbpa"}' -p testd
+executed transaction: e0b52ec1a26008f3ca59c87d0521b2bab21a13e1d5b8abb35ab9cd43f5262ee1  128 bytes  610 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.0300 EOS","bpname":""}
+#         eosio <= eosio::unfreeze              {"voter":"testd","bpname":"biosbpa"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
+### 3.8 赎回租赁内存的投票
+
+如上所述, 当撤回活期或定期投票后, 用户投票的token会进入unstaking状态,
+当当前块高度大于unstake_height后, 可以使用`unfreeze` action将投票赎回.
+
+```cpp
+   [[eosio::action]] void unfreeze( const account_name& voter, const account_name& bpname );
+```
+
+参数:
+
+- voter : 投票者
+- bpname : 要撤回投票所属的节点
+
+最小权限:
+
+- voter@active
+
+示例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio unfreeze '{"voter":"testd", "bpname":"biosbpa"}' -p testd
+executed transaction: e0b52ec1a26008f3ca59c87d0521b2bab21a13e1d5b8abb35ab9cd43f5262ee1  128 bytes  610 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.0300 EOS","bpname":""}
+#         eosio <= eosio::unfreeze              {"voter":"testd","bpname":"biosbpa"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
