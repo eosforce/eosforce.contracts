@@ -109,4 +109,77 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ## 3. Vote
 
+EOSForce has designed a voting mechanism which is completely different from EOSIO.
+The actions for voting is also very different from EOSIO.
+
+There are two types of voting in EOSForce: current voting and fix-time voting.
+User voting informations is stored in the `votes` table and the `fixvotes` table.
+In addition, EOSForce can use voting dividends to deduct the RAM rent, it is in the `votes4ram` table and the `vote4ramsum` table.
+
+For example, in the `votes` table, you can get a user voting information:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get table eosio testd votes
+{
+  "rows": [{
+      "bpname": "biosbpa",
+      "voteage": {
+        "staked": "200.0000 EOS",
+        "age": 0,
+        "update_height": 176
+      },
+      "unstaking": "0.0000 EOS",
+      "unstake_height": 176
+    },{
+      "bpname": "biosbpb",
+      "voteage": {
+        "staked": "300.0000 EOS",
+        "age": 0,
+        "update_height": 179
+      },
+      "unstaking": "0.0000 EOS",
+      "unstake_height": 179
+    }
+  ],
+  "more": false
+}
+```
+
+For BPs, the information for obtaining votes is in the `bps` table, and other information of BPs is also in this table.
+
+The detail information about the above tables is described in the `claim` action.
+
+User voting information can be obtained by cleos get account command (or directly call http api):
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 get account testd
+created: 2018-05-28T12:00:00.000
+permissions:
+     owner     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+        active     1:    1 EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+memory:
+     quota:         8 KiB    used:     3.262 KiB
+
+EOS balances:
+     liquid:        19389.8400 EOS
+     total:         19389.8400 EOS
+
+current votes:
+     biosbpa          200.0000 EOS     unstaking:         0.0000 EOS
+     biosbpb          300.0000 EOS     unstaking:         0.0000 EOS
+     biosbpv          100.0000 EOS     unstaking:         0.0000 EOS
+```
+
+In EOSForce, the user votes on the core token and implements the “one token one vote” voting method.
+For the current voting, the user uses the `vote` action to vote.
+After voting, the user can use `revote` action to change the BP he is voting in any time.
+When the user decides to withdraw the vote to exchange for the core token,
+user must first withdraw the votings originally sent to the BP.
+At this time, these vote are in the state of “to be unfreeze”.
+After waiting for the lockout period (generally equivalent to the number of blocks in 3 days),
+the vote can be convert to the core token by `unfreeze` action.
+The process of fix-time voting is basically the same as the current vote.
+
+In EOSForce, all votes are stored and manipulated based on the user's BP. The following is an introduction to the action to voting:
+
 ## 4. BP Manager
