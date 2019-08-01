@@ -820,7 +820,40 @@ warning: transaction executed locally, but may not be confirmed by the network y
 
 ## 4. BP相关
 
+以下是bp相关的action:
+
 ### 4.1 注册BP
+
+账户可以通过`updatebp`注册为bp, 如果BP已经注册则会修改BP信息.
+
+```cpp
+   [[eosio::action]] void updatebp( const account_name& bpname,
+                                    const public_key& block_signing_key,
+                                    const uint32_t commission_rate,
+                                    const std::string& url );
+```
+
+参数:
+
+- bpname : BP名字
+- block_signing_key : 出块签名公钥, 用于出块
+- commission_rate : 分配率
+- url : bp节点URL信息
+
+最小权限:
+
+- voter@active
+
+示例:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio updatebp \
+'{ "bpname":"testd","block_signing_key":"EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c","commission_rate":1,"url":"http://eosforce.io" }' -p testd
+executed transaction: 35b43489ce9743ea74192cec6b1f8ddff9a94270f4090fd56d73c218eafcf9e8  176 bytes  236 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"100.0000 EOS","bpname":""}
+#         eosio <= eosio::updatebp              {"bpname":"testd","block_signing_key":"EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c","commi...
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
 
 ### 4.2 BP心跳
 
