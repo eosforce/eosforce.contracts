@@ -26,7 +26,7 @@ namespace eosio {
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
-         reward_block(curr_block_num,bpname,schedule_version,true);
+         reward_block( curr_block_num,bpname,schedule_version,true );
 
          schs_tbl.emplace( eosforce::system_account, [&]( schedule_info& s ) {
             s.version = schedule_version;
@@ -51,9 +51,10 @@ namespace eosio {
       uint32_t bp_last_amount = 0;
       bpmonitor_table bpm_tbl( get_self(), get_self().value );
       auto monitor_bp = bpm_tbl.find(bpname);
-      if (monitor_bp != bpm_tbl.end()) {
+      if ( monitor_bp != bpm_tbl.end() ) {
          bp_last_amount = monitor_bp->last_block_num;
       }
+
 
       if (pre_block_out > bp_last_amount && pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
          reward_block(curr_block_num,bpname,schedule_version,false);
@@ -222,10 +223,10 @@ namespace eosio {
                                        const account_name& bpname,
                                        const uint32_t schedule_version,
                                        const bool is_change_producers) {
-      blockreward_table br_tbl(get_self(), get_self().value);
-      auto cblockreward = br_tbl.find( bp_reward_name.value);
-      if (cblockreward == br_tbl.end()) {
-         if (is_change_producers) {
+      blockreward_table br_tbl( get_self(), get_self().value );
+      auto cblockreward = br_tbl.find( bp_reward_name.value );
+      if ( cblockreward == br_tbl.end() ) {
+         if ( is_change_producers ) {
             br_tbl.emplace( get_self(), [&]( block_reward& s ) {
                s.name = bp_reward_name.value;
                s.reward_block_out = asset(0, CORE_SYMBOL);
@@ -239,7 +240,9 @@ namespace eosio {
       }
 
       auto last_version = schedule_version;
-      if (is_change_producers) last_version -= 1;
+      if ( is_change_producers ) {
+         last_version -= 1;
+      } 
       schedules_table schs_tbl( get_self(), get_self().value );
       auto sch = schs_tbl.find( uint64_t( last_version ) );
       bpmonitor_table bpm_tbl( get_self(), get_self().value );
@@ -255,8 +258,8 @@ namespace eosio {
 
       uint64_t total_block_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-         auto monitor_bp = bpm_tbl.find(sch->producers[i].bpname);
-         if (monitor_bp == bpm_tbl.end()) {
+         auto monitor_bp = bpm_tbl.find( sch->producers[i].bpname );
+         if ( monitor_bp == bpm_tbl.end() ) {
             bpm_tbl.emplace( get_self(), [&]( bp_monitor& s ) {
                s.bpname = sch->producers[i].bpname;
                s.last_block_num = 0;
@@ -265,24 +268,25 @@ namespace eosio {
                s.total_drain_block = 0;
                s.stability = BASE_BLOCK_OUT_WEIGHT;
                s.bock_age = 0;
-               s.can_be_punished = false;
+               s.bp_status = 0;
+               s.end_punish_block = 0;
             });
             monitor_bp = bpm_tbl.find(sch->producers[i].bpname);
          }
 
          auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
          auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;      
-         if (ifirst <= i && i < ilast){  
+         if ( ifirst <= i && i < ilast ){  
             drain_num += 1;
          }
-         else if (ifirst > ilast && (ifirst <= i || i < ilast)) {
+         else if ( ifirst > ilast && (ifirst <= i || i < ilast) ) {
             drain_num += 1;
          }
 
-         if (is_change_producers) { drain_num -= 1;}
+         if ( is_change_producers ) { drain_num -= 1; }
 
-         if (drain_num <= 0 && monitor_bp->consecutive_drain_block > 2) {
-            drainblock_table drainblock_tbl(get_self(),sch->producers[i].bpname);
+         if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > 2 ) {
+            drainblock_table drainblock_tbl( get_self(),sch->producers[i].bpname );
             drainblock_tbl.emplace( get_self(), [&]( drain_block_info& s ) { 
                s.current_block_num = static_cast<uint64_t>(curr_block_num);
                s.drain_block_num = monitor_bp->consecutive_drain_block;
@@ -290,7 +294,7 @@ namespace eosio {
          }
 
          bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
-            if (is_change_producers) {
+            if ( is_change_producers ) {
                s.last_block_num = 0;
             }
             else {
