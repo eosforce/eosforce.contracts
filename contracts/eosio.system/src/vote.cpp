@@ -225,11 +225,30 @@ namespace eosio {
          static_cast<int64_t>( amount_voteage / static_cast<int128_t>(newest_total_voteage) ), 
          CORE_SYMBOL };
 
-      check( (reward.amount >= 0) && (reward.amount <= bp.rewards_pool.amount),
+      auto reward_bp = asset{0,CORE_SYMBOL};
+      if ( voter == bpname ) {
+          blockreward_table br_tbl( get_self(), get_self().value );
+         auto cblockreward = br_tbl.find( bp_reward_name.value );
+         bpmonitor_table bpm_tbl( get_self(), get_self().value );
+         auto monitor_bp = bpm_tbl.find( bpname );
+         if ( (cblockreward != br_tbl.end()) && (monitor_bp != bpm_tbl.end()) ) {
+            reward_bp = monitor_bp->bock_age * cblockreward->reward_block_out / cblockreward->total_block_age ;
+            check(reward_bp <= cblockreward->reward_block_out,"need reward_bp <= reward_block_out" );
+            br_tbl.modify(cblockreward,name{0}, [&]( block_reward& b ) {
+               b.total_block_age -= monitor_bp->bock_age;
+               b.reward_block_out -= reward_bp;
+            });
+            bpm_tbl.modify(monitor_bp,name{0}, [&]( bp_monitor& b ) {
+               b.bock_age = 0;
+            });
+         }
+      }
+
+      check( ((reward.amount >= 0) && (reward.amount <= bp.rewards_pool.amount)) || (reward_bp.amount > 0),
              "need 0 <= claim reward quantity <= rewards_pool" );
 
       _accounts.modify( act, name{0}, [&]( account_info& a ) { 
-         a.available += reward; 
+         a.available += reward + reward_bp; 
       } );
 
       _bps.modify( bp, name{0}, [&]( bp_info& b ) {
