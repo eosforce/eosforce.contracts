@@ -50,7 +50,7 @@ namespace eosio {
          using contract::contract;
 
       private:
-
+         
       public:
          [[eosio::action]] void addtype( const name& pledge_name,
                                          const account_name& deduction_account,

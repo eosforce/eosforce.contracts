@@ -4,6 +4,7 @@
 
 #include <eosio/privileged.hpp>
 #include <eosio/producer_schedule.hpp>
+#include <../../eosio.pledge/include/eosio.pledge/eosio.pledge.hpp>
 
 namespace eosio {
 
@@ -185,6 +186,12 @@ namespace eosio {
             continue;
          }
 
+         pledges bp_pledge(eosforce::pledge_account,it->name);
+         auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+         if (pledge == bp_pledge.end() || pledge->pledge.amount <= 0) {
+            continue;
+         }
+
          const auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP * double( it->total_staked ) /double( staked_all_bps ) );
 
          // reward bp account
@@ -255,8 +262,7 @@ namespace eosio {
          }
       }
 
-      uint64_t total_block_age = 0;
-      uint32_t total_bp_age = 0;
+      uint64_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto monitor_bp = bpm_tbl.find( sch->producers[i].bpname );
          if ( monitor_bp == bpm_tbl.end() ) {
@@ -292,7 +298,7 @@ namespace eosio {
                s.drain_block_num = monitor_bp->consecutive_drain_block;
             });
          }
-         auto bp_age = producer_num*monitor_bp->stability;
+         auto bp_age = producer_num * monitor_bp->stability;
          total_bp_age += bp_age;
          bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
             if (is_change_producers) {
@@ -321,13 +327,13 @@ namespace eosio {
             }
 
          });
-
       }
-
+      auto total_producer_num = curr_block_num - cblockreward->last_reward_block_num;
       br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {
          s.last_standard_bp = bpname;
          s.last_reward_block_num = curr_block_num;
          s.total_block_age += total_bp_age;
+         s.reward_block_out += asset(total_producer_num * BLOCK_OUT_REWARD,CORE_SYMBOL);
       });
    }
 } /// namespace eosio
