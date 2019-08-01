@@ -891,6 +891,3 @@ plugin=eosio::heartbeat_plugin
 最小权限:
 
 - bppingname@active
-
-### 4.3 冻结BP
-
