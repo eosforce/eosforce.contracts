@@ -256,6 +256,7 @@ namespace eosio {
       }
 
       uint64_t total_block_age = 0;
+      uint32_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto monitor_bp = bpm_tbl.find( sch->producers[i].bpname );
          if ( monitor_bp == bpm_tbl.end() ) {
@@ -291,23 +292,34 @@ namespace eosio {
                s.drain_block_num = monitor_bp->consecutive_drain_block;
             });
          }
-
+         auto bp_age = producer_num*monitor_bp->stability;
+         total_bp_age += bp_age;
          bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
-            if ( is_change_producers ) {
+            if (is_change_producers) {
                s.last_block_num = 0;
             }
             else {
                s.last_block_num = sch->producers[i].amount;
             }
+            s.bock_age += bp_age;
             if (drain_num > 0) {
                s.consecutive_drain_block += drain_num;
                s.total_drain_block += drain_num;
                s.consecutive_produce_block = 0;
+               s.stability = BASE_BLOCK_OUT_WEIGHT;
             }
             else {
                s.consecutive_drain_block = 0;
                s.consecutive_produce_block += producer_num;
             }
+            if ( (s.consecutive_drain_block + 1) % BP_PUBISH_DRAIN_NUM == 0 ) {
+               s.bp_status = 1;
+            }
+
+            if ((s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0) {
+               s.stability += 1;
+            }
+
          });
 
       }
@@ -315,6 +327,7 @@ namespace eosio {
       br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {
          s.last_standard_bp = bpname;
          s.last_reward_block_num = curr_block_num;
+         s.total_block_age += total_bp_age;
       });
    }
 } /// namespace eosio
