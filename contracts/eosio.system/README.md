@@ -182,4 +182,68 @@ The process of fix-time voting is basically the same as the current vote.
 
 In EOSForce, all votes are stored and manipulated based on the user's BP. The following is an introduction to the action to voting:
 
-## 4. BP Manager
+### 3.1 Current Vote
+
+```cpp
+   [[eosio::action]] void vote( const account_name& voter,
+                                const account_name& bpname,
+                                const asset& stake );
+```
+
+Modify account's total vote for a block producer.
+
+Parameters:
+
+- voter : account to vote
+- bpname : bp 
+- stake : the token in vote to change to
+
+Minimum privilege:
+
+- voter@active
+
+Note:
+
+1.`vote` action is to modify the user's vote for a certain BP, that is mean, it will increase the vote  to the bp when the number of stake is greater than the current number of votes, and in other side it will withdrawn when the number of votes is less than the current number of votes.
+2. According to the number of votes, user balance will be reduced.
+3. Increase the total number of votes for the node, the current total ticketing age of the settlement node
+
+Example:
+
+### 3.2 Revote
+
+**Revote** allows user to change node which has voted, without unfreeze and freeze token.
+
+```cpp
+void revote( const account_name voter,
+             const account_name frombp,
+             const account_name tobp,
+             const asset restake ) {
+```
+
+Parameter:
+
+- voter : account to vote
+- frombp : the from bp which voter voted
+- tobp :  the to bp which voter want to vote
+- restake : the token change of votes
+
+Minimum privilege:
+
+- voter@active
+
+Example:
+
+Suppose `testa` account vote the `biosbpa` node with `5000.0000 EOS`,
+At this point, the user wants to switch votes from `biosbpa` to the `biosbpb` node with  `2000.0000 EOS`, then can execute:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio revote '{"voter":"testa","frombp":"biosbpa","tobp":"biosbpb","restake":"2000.0000 EOS"}' -p testa
+executed transaction: 526054c5f4a2d5f2aff91abc21699fde0e93a1f7895cb6d9b34742c2834ae2f2  152 bytes  280 us
+#         eosio <= eosio::onfee                 {"actor":"testa","fee":"0.2000 EOS","bpname":""}
+#         eosio <= eosio::revote                {"voter":"testa","frombp":"biosbpa","tobp":"biosbpb","restake":"2000.0000 EOS"}
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
+After action execution, the account token vote to the `biosbpa` node is `3000.0000 EOS`,
+and the token vote to for the `biosbpb` node is increased by `2000.0000 EOS`.
