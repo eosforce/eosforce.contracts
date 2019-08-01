@@ -235,6 +235,9 @@ namespace eosio {
          inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
          inline bool is_producer_in_blacklist( const account_name& bpname ) const;
 
+         bool is_super_bp( const account_name &bpname ) const;
+         void exec_punish_bp( const account_name &bpname );
+
       public:
          [[eosio::action]] void transfer( const account_name& from,
                                           const account_name& to,
@@ -295,6 +298,7 @@ namespace eosio {
 
          [[eosio::action]] void removebp( const account_name& bpname );
          [[eosio::action]] void punishbp( const account_name& bpname,const account_name& proposaler );
+         [[eosio::action]] void approvebp( const account_name& bpname,const account_name& approver );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
