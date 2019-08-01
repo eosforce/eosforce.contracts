@@ -43,9 +43,22 @@ namespace eosio {
       });
 
       if (punish_bp->approve_bp.size() >= 16) {
-
+         exec_punish_bp(bpname);
       }
 
+   }
+
+   void system_contract::bailpunish( const account_name& bpname ) {
+      require_auth( name{bpname} );
+      const auto curr_block_num = current_block_num();
+      bpmonitor_table bpm_tbl( get_self(), get_self().value );
+      auto monitor_bp = bpm_tbl.find(bpname);
+      check( (monitor_bp != bpm_tbl.end()) && (monitor_bp->bp_status == 2) && (monitor_bp->end_punish_block > curr_block_num)
+         ,"the bp can not bail" );
+      bpm_tbl.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 
+            s.bp_status = 0;
+            s.end_punish_block = 0;
+         });
    }
 
    void system_contract::exec_punish_bp( const account_name &bpname ) {

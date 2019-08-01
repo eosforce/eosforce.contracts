@@ -299,6 +299,7 @@ namespace eosio {
          [[eosio::action]] void removebp( const account_name& bpname );
          [[eosio::action]] void punishbp( const account_name& bpname,const account_name& proposaler );
          [[eosio::action]] void approvebp( const account_name& bpname,const account_name& approver );
+         [[eosio::action]] void bailpunish( const account_name& bpname );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
