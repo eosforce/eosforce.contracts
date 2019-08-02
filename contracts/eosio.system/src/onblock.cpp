@@ -55,6 +55,7 @@ namespace eosio {
          bp_last_amount = monitor_bp->last_block_num;
       }
 
+
       if (pre_block_out > bp_last_amount && pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
          reward_block(curr_block_num,bpname,schedule_version,false);
       }
