@@ -298,3 +298,27 @@ spec_version: "0.2.0"
 title: Take out Fix Time Vote
 summary: 'When {{nowrap voter}} fix-time voting is timeout, {{nowrap voter}} can take out stake form {{nowrap key}} voting'
 ---
+
+<h1 class="contract">punishbp</h1>
+
+---
+spec_version: "0.2.0"
+title: Proposed to punish drain block bp
+summary: '{{proposaler}} proposed to punish {{bpname}}'
+---
+
+<h1 class="contract">approvebp</h1>
+
+---
+spec_version: "0.2.0"
+title: Approve to punish drain block bp
+summary: '{{approver}} approve to punish {{bpname}}.only producer can approve and when the number of approver is bigger then 16 the bp will be punished'
+---
+
+<h1 class="contract">bailpunish</h1>
+
+---
+spec_version: "0.2.0"
+title: The punished bp bail to normal
+summary: 'When the punish is over,{{bpname}} can bail to normal'
+---

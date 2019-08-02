@@ -79,7 +79,7 @@ namespace eosio {
             ++approve_bp_num;
          }
       }
-      if (approve_bp_num > 16) {
+      if (approve_bp_num >= APPROVE_TO_PUNISH_NUM) {
          bpmonitor_table bpm_tbl( get_self(), get_self().value );
          auto monitor_bp = bpm_tbl.find(bpname);
          check( (monitor_bp != bpm_tbl.end()) && (monitor_bp->bp_status == 1),"the bp can not to be punish" );

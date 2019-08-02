@@ -328,7 +328,7 @@ namespace eosio {
                s.bp_status = 1;
             }
 
-            if ((s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0) {
+            if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < BLOCK_OUT_WEIGHT_LIMIT) {
                s.stability += 1;
             }
          });
