@@ -332,7 +332,15 @@ namespace eosio {
                s.stability += 1;
             }
          });
-         //扣除押金
+         
+         if ( drain_num > 0 ) {
+            pledges bp_pledge(eosforce::pledge_account,sch->producers[i].bpname);
+            auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+            if ( pledge != bp_pledge.end() ) {
+               pledge::deduction_action temp{ eosforce::pledge_account, {  {eosforce::system_account, eosforce::active_permission} } };
+               temp.send( eosforce::block_out_pledge,sch->producers[i].bpname,asset(drain_num*DRAIN_BLOCK_PUNISH,CORE_SYMBOL),std::string("drain block punish")  );
+            }
+         }
       }
       auto total_producer_num = curr_block_num - cblockreward->last_reward_block_num;
       br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {

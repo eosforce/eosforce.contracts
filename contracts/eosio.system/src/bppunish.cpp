@@ -17,7 +17,10 @@ namespace eosio {
       punishbp_table pb_tbl( get_self(), get_self().value );
       auto punish_bp = pb_tbl.find(bpname);
       check( punish_bp == pb_tbl.end() || punish_bp->effective_block_num < curr_block_num,"the bp was Being resolved");
-      // 校验是否有抵押
+      
+      pledges bp_pledge(eosforce::pledge_account,proposaler);
+      auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+      check( pledge != bp_pledge.end() && pledge->pledge > asset(100*10000,CORE_SYMBOL),"the proposaler must pledge 100 EOS on block.out");
 
       if ( punish_bp != pb_tbl.end() ) {
          pb_tbl.erase(punish_bp);
@@ -55,6 +58,7 @@ namespace eosio {
       auto monitor_bp = bpm_tbl.find(bpname);
       check( (monitor_bp != bpm_tbl.end()) && (monitor_bp->bp_status == 2) && (monitor_bp->end_punish_block > curr_block_num)
          ,"the bp can not bail" );
+
       bpm_tbl.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 
             s.bp_status = 0;
             s.end_punish_block = 0;
@@ -76,7 +80,6 @@ namespace eosio {
          }
       }
       if (approve_bp_num > 16) {
-         //开始惩罚
          bpmonitor_table bpm_tbl( get_self(), get_self().value );
          auto monitor_bp = bpm_tbl.find(bpname);
          check( (monitor_bp != bpm_tbl.end()) && (monitor_bp->bp_status == 1),"the bp can not to be punish" );
@@ -84,6 +87,28 @@ namespace eosio {
             s.bp_status = 2;
             s.end_punish_block = curr_block_num + PUNISH_BP_LIMIT;
          });
+         
+         pledges bp_pledge(eosforce::pledge_account,bpname);
+         auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+         if (pledge == bp_pledge.end() || pledge->deduction <= asset(0,CORE_SYMBOL) || pledge->pledge + pledge->deduction <= asset(0,CORE_SYMBOL)) {
+            return ;
+         }
+         else {
+            auto total_reward = pledge->deduction;
+            if ( pledge->pledge < asset(0,CORE_SYMBOL) ) {
+               total_reward += pledge->pledge;
+            }
+            auto proposaler_reward = total_reward / 2 ;
+            auto approver_reward = total_reward / (2 * approve_bp_num);
+            pledge::allotreward_action temp{ eosforce::pledge_account, {  {eosforce::system_account, eosforce::active_permission} } };
+            temp.send( eosforce::block_out_pledge,bpname,punish_bp->proposaler,proposaler_reward,std::string("reward proposaler") );
+            for (int i = 0; i != isize; ++i ){
+               if ( is_super_bp(punish_bp->approve_bp[i]) ) {
+                  temp.send( eosforce::block_out_pledge,bpname,punish_bp->approve_bp[i],approver_reward,std::string("reward approver") );
+               }
+            }
+         }
+         pb_tbl.erase(punish_bp);
       }
    }
 

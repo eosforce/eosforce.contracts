@@ -32,6 +32,7 @@ namespace eosio {
    static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9; 
    static constexpr int BLOCK_OUT_REWARD = 10000; 
    static constexpr int PUNISH_BP_LIMIT = 50000; 
+   static constexpr int DRAIN_BLOCK_PUNISH = 20000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
