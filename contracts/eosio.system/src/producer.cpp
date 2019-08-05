@@ -77,4 +77,46 @@ namespace eosio {
       }
    }
 
+   void system_contract::bpclaim( const account_name& bpname ) {
+      require_auth( name{bpname} );
+      const auto& act = _accounts.get( bpname, "bpname is not found in accounts table" );
+
+      auto reward_block = asset(0,CORE_SYMBOL);
+      blockreward_table br_tbl( get_self(), get_self().value );
+      auto cblockreward = br_tbl.find( bp_reward_name.value );
+      auto monitor_bp = _bpmonitors.find( bpname );
+      if ( cblockreward != br_tbl.end() && monitor_bp != _bpmonitors.end() ) {
+         reward_block = monitor_bp->bock_age * cblockreward->reward_block_out / cblockreward->total_block_age;
+         check( reward_block < cblockreward->reward_block_out,"need reward_block < total_block_out");
+
+         br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) { 
+            s.total_block_age -= monitor_bp->bock_age;
+            s.reward_block_out -= reward_block;
+         } );
+
+         _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+            s.bock_age = 0;
+          } );
+      }
+
+      auto reward_bp = asset(0,CORE_SYMBOL);
+      bpreward_table bprewad_tbl( _self, _self.value );
+      auto bp_reward_info = bprewad_tbl.find(bpname);
+      if ( bp_reward_info != bprewad_tbl.end() ) {
+         reward_bp = bp_reward_info->reward;
+
+         bprewad_tbl.modify( bp_reward_info, name{0}, [&]( bps_reward& b ) { 
+            b.reward = asset( 0, CORE_SYMBOL ); 
+         } );
+      }
+
+      auto total_reward = reward_bp + reward_block;
+      check( 0 < total_reward.amount && total_reward.amount < MIN_CLAIM_BP,"need 0 < reward < 100 EOSC" );
+
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
+         a.available += total_reward; 
+      } );
+
+   }
+
 } // namespace eosio

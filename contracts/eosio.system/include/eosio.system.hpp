@@ -23,8 +23,7 @@ namespace eosio {
    static constexpr uint32_t BLOCK_NUM_PER_DAY     = 24 * 60 * 20;
    static constexpr uint32_t FROZEN_DELAY          = 3 * BLOCK_NUM_PER_DAY;
    static constexpr int NUM_OF_TOP_BPS             = 23;
-   static constexpr int BLOCK_REWARDS_BP           = 27000;
-   static constexpr int BLOCK_REWARDS_B1           = 3000;
+   static constexpr int BLOCK_REWARDS_BP           = 30000;
    static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
    static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
    static constexpr uint32_t BP_CYCLE_BLOCK_OUT    = 1;
@@ -36,6 +35,7 @@ namespace eosio {
    static constexpr int PUNISH_BP_LIMIT = 28800; 
    static constexpr int DRAIN_BLOCK_PUNISH = 10*10000; 
    static constexpr int BASE_BLOCK_OUT_PLEDGE = 12600*10000; 
+   static constexpr int MIN_CLAIM_BP = 100*10000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
@@ -314,6 +314,8 @@ namespace eosio {
          [[eosio::action]] void punishbp( const account_name& bpname,const account_name& proposaler );
          [[eosio::action]] void approvebp( const account_name& bpname,const account_name& approver );
          [[eosio::action]] void bailpunish( const account_name& bpname );
+
+         [[eosio::action]] void bpclaim( const account_name& bpname );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;

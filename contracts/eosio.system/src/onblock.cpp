@@ -71,13 +71,6 @@ namespace eosio {
       // reward bps
       reward_bps( block_producers, curr_block_num, current_time_sec );
 
-      if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
-         const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
-         _accounts.modify( b1, name{0}, [&]( account_info& a ) {
-            a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
-         } );
-      }
-
       if( curr_block_num % UPDATE_CYCLE == 0 ) {
          update_elected_bps();
       }
