@@ -41,6 +41,12 @@ namespace eosio {
    static constexpr name chainstatus_name   = "chainstatus"_n;
    static constexpr name bp_reward_name     = "bpreward"_n;
 
+   enum BPSTATUS : uint32_t { 
+      NORMAL = 0,
+      LACK_PLEDGE,
+      PUNISHED
+   };
+
    // tables
    struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
       account_name name      = 0;
@@ -412,7 +418,7 @@ namespace eosio {
 
    inline bool system_contract::is_producer_in_punished( const account_name& bpname ) const {
       const auto itr = _bpmonitors.find( bpname );
-            // Note isactive is false mean bp is ban
-      return itr != _bpmonitors.end() && ( itr->bp_status == 2 );
+      // Note bp_status is 2 mean bp is punished
+      return itr != _bpmonitors.end() && ( itr->bp_status == BPSTATUS::PUNISHED );
    }
 } // namespace eosio

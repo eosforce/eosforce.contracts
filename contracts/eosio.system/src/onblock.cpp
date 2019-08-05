@@ -281,7 +281,7 @@ namespace eosio {
                s.total_drain_block = 0;
                s.stability = BASE_BLOCK_OUT_WEIGHT;
                s.bock_age = 0;
-               s.bp_status = 0;
+               s.bp_status = BPSTATUS::NORMAL;
                s.end_punish_block = 0;
             });
             monitor_bp = _bpmonitors.find(sch->producers[i].bpname);
@@ -334,8 +334,8 @@ namespace eosio {
                s.consecutive_produce_block += producer_num;
             }
             // if drain block bigger then BP_PUBISH_DRAIN_NUM status is one
-            if ( s.consecutive_drain_block > BP_PUBISH_DRAIN_NUM && s.bp_status == 0) {
-               s.bp_status = 1;
+            if ( s.consecutive_drain_block > BP_PUBISH_DRAIN_NUM && s.bp_status == BPSTATUS::NORMAL) {
+               s.bp_status = BPSTATUS::LACK_PLEDGE;
             }
             // if consecutive produce block is Multiple of BP_PUBISH_DRAIN_NUM stability add one
             if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < BLOCK_OUT_WEIGHT_LIMIT) {

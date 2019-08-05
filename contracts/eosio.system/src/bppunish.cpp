@@ -10,7 +10,7 @@ namespace eosio {
    void system_contract::punishbp( const account_name& bpname,const account_name& proposaler ) {
       require_auth( name{proposaler} );
       auto monitor_bp = _bpmonitors.find(bpname);
-      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == 1),"the bp can not to be punish" );
+      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == BPSTATUS::LACK_PLEDGE),"the bp can not to be punish" );
 
       const auto curr_block_num = current_block_num();
       punishbp_table pb_tbl( get_self(), get_self().value );
@@ -54,11 +54,11 @@ namespace eosio {
       require_auth( name{bpname} );
       const auto curr_block_num = current_block_num();
       auto monitor_bp = _bpmonitors.find(bpname);
-      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == 2) && (monitor_bp->end_punish_block < curr_block_num)
+      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == BPSTATUS::PUNISHED) && (monitor_bp->end_punish_block < curr_block_num)
          ,"the bp can not bail" );
 
       _bpmonitors.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 
-            s.bp_status = 0;
+            s.bp_status = BPSTATUS::NORMAL;
             s.end_punish_block = 0;
          });
    }
@@ -79,9 +79,9 @@ namespace eosio {
       }
       if (approve_bp_num >= APPROVE_TO_PUNISH_NUM) {
          auto monitor_bp = _bpmonitors.find(bpname);
-         check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == 1),"the bp can not to be punish" );
+         check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == BPSTATUS::LACK_PLEDGE),"the bp can not to be punish" );
          _bpmonitors.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 
-            s.bp_status = 2;
+            s.bp_status = BPSTATUS::PUNISHED;
             s.end_punish_block = curr_block_num + PUNISH_BP_LIMIT;
          });
          
