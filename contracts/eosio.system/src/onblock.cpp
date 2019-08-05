@@ -188,7 +188,7 @@ namespace eosio {
 
          pledges bp_pledge(eosforce::pledge_account,it->name);
          auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
-         if ( pledge == bp_pledge.end() || pledge->pledge.amount <= 0 ) {
+         if ( pledge == bp_pledge.end() || pledge->pledge.amount <= BASE_BLOCK_OUT_PLEDGE ) {
             continue;
          }
 
@@ -235,6 +235,7 @@ namespace eosio {
                                        const account_name& bpname,
                                        const uint32_t schedule_version,
                                        const bool is_change_producers) {
+      // if blockreward_table no record return ,if change producer add a record to blockreward_table
       blockreward_table br_tbl( get_self(), get_self().value );
       auto cblockreward = br_tbl.find( bp_reward_name.value );
       if ( cblockreward == br_tbl.end() ) {
@@ -250,7 +251,7 @@ namespace eosio {
          }
          return ;
       }
-
+      // if change producer ,use last version
       auto last_version = schedule_version;
       if ( is_change_producers ) {
          last_version -= 1;
@@ -258,6 +259,7 @@ namespace eosio {
       schedules_table schs_tbl( get_self(), get_self().value );
       auto sch = schs_tbl.find( uint64_t( last_version ) );
       bpmonitor_table bpm_tbl( get_self(), get_self().value );
+      //find the first and the last
       uint32_t ifirst = 0,ilast = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          if( sch->producers[i].bpname == bpname ) {
@@ -270,6 +272,7 @@ namespace eosio {
 
       uint64_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         // if no monitor_bp record,add one
          auto monitor_bp = bpm_tbl.find( sch->producers[i].bpname );
          if ( monitor_bp == bpm_tbl.end() ) {
             bpm_tbl.emplace( get_self(), [&]( bp_monitor& s ) {
@@ -287,14 +290,15 @@ namespace eosio {
          }
 
          auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
-         auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;      
+         auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;
+         // between first and last drain one block      
          if ( ifirst <= i && i < ilast ){  
             drain_num += 1;
          }
          else if ( ifirst > ilast && (ifirst <= i || i < ilast) ) {
             drain_num += 1;
          }
-
+         // if change producer all producer do not drain one block
          if ( is_change_producers ) { drain_num -= 1; }
 
          if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > 2 ) {
@@ -304,8 +308,15 @@ namespace eosio {
                s.drain_block_num = monitor_bp->consecutive_drain_block;
             });
          }
+         // if no pledge block reward will not get
          auto bp_age = producer_num * monitor_bp->stability;
+         pledges bp_pledge(eosforce::pledge_account,sch->producers[i].bpname);
+         auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+         if ( pledge == bp_pledge.end() || pledge->pledge.amount <= BASE_BLOCK_OUT_PLEDGE ) {
+            bp_age = 0;
+         }
          total_bp_age += bp_age;
+
          bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
             if (is_change_producers) {
                s.last_block_num = 0;
@@ -324,24 +335,24 @@ namespace eosio {
                s.consecutive_drain_block = 0;
                s.consecutive_produce_block += producer_num;
             }
-            if ( (s.consecutive_drain_block + 1) % BP_PUBISH_DRAIN_NUM == 0 ) {
+            // if drain block bigger then BP_PUBISH_DRAIN_NUM status is one
+            if ( s.consecutive_drain_block > BP_PUBISH_DRAIN_NUM && s.bp_status == 0) {
                s.bp_status = 1;
             }
-
+            // if consecutive produce block is Multiple of BP_PUBISH_DRAIN_NUM stability add one
             if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < BLOCK_OUT_WEIGHT_LIMIT) {
                s.stability += 1;
             }
          });
-         
+         // deduction pledge
          if ( drain_num > 0 ) {
-            pledges bp_pledge(eosforce::pledge_account,sch->producers[i].bpname);
-            auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
             if ( pledge != bp_pledge.end() ) {
                pledge::deduction_action temp{ eosforce::pledge_account, {  {eosforce::system_account, eosforce::active_permission} } };
                temp.send( eosforce::block_out_pledge,sch->producers[i].bpname,asset(drain_num*DRAIN_BLOCK_PUNISH,CORE_SYMBOL),std::string("drain block punish")  );
             }
          }
       }
+      // reward block out
       auto total_producer_num = curr_block_num - cblockreward->last_reward_block_num;
       br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) {
          s.last_standard_bp = bpname;
