@@ -54,7 +54,7 @@ namespace eosio {
       require_auth( name{bpname} );
       const auto curr_block_num = current_block_num();
       auto monitor_bp = _bpmonitors.find(bpname);
-      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == 2) && (monitor_bp->end_punish_block > curr_block_num)
+      check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == 2) && (monitor_bp->end_punish_block < curr_block_num)
          ,"the bp can not bail" );
 
       _bpmonitors.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 

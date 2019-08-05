@@ -172,6 +172,13 @@ namespace eosio {
       uint64_t primary_key() const { return punish_bp_name; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.system")]] bps_reward {
+      account_name   bpname;
+      asset          reward;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -187,6 +194,7 @@ namespace eosio {
    typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
    typedef eosio::multi_index<"drainblocks"_n, drain_block_info>      drainblock_table;
    typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
+   typedef eosio::multi_index<"bpsreward"_n,   bps_reward>             bpreward_table;
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
