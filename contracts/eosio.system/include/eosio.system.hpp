@@ -34,7 +34,7 @@ namespace eosio {
    static constexpr uint32_t APPROVE_TO_PUNISH_NUM = 16; 
    static constexpr int BLOCK_OUT_REWARD = 5000; 
    static constexpr int PUNISH_BP_LIMIT = 28800; 
-   static constexpr int DRAIN_BLOCK_PUNISH = 100000; 
+   static constexpr int DRAIN_BLOCK_PUNISH = 10*10000; 
    static constexpr int BASE_BLOCK_OUT_PLEDGE = 12600*10000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
@@ -185,7 +185,7 @@ namespace eosio {
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
    typedef eosio::multi_index<"blockreward"_n, block_reward>          blockreward_table;
    typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
-   typedef eosio::multi_index<"drainblocks"_n, drain_block_info>    drainblock_table;
+   typedef eosio::multi_index<"drainblocks"_n, drain_block_info>      drainblock_table;
    typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
    /**
     * @defgroup system_contract eosio.system
@@ -211,6 +211,7 @@ namespace eosio {
          accounts_table      _accounts;
          bps_table           _bps;
          blackproducer_table _blackproducers;
+         bpmonitor_table     _bpmonitors;
 
       private:
          // to bps in onblock
@@ -238,6 +239,7 @@ namespace eosio {
          inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta );
          inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
          inline bool is_producer_in_blacklist( const account_name& bpname ) const;
+         inline bool is_producer_in_punished( const account_name& bpname ) const;
 
          bool is_super_bp( const account_name &bpname ) const;
          void exec_punish_bp( const account_name &bpname );
@@ -396,5 +398,11 @@ namespace eosio {
       const auto itr = _blackproducers.find( bpname );
       // Note isactive is false mean bp is ban
       return itr != _blackproducers.end() && ( !itr->isactive );
+   }
+
+   inline bool system_contract::is_producer_in_punished( const account_name& bpname ) const {
+      const auto itr = _bpmonitors.find( bpname );
+            // Note isactive is false mean bp is ban
+      return itr != _bpmonitors.end() && ( itr->bp_status == 2 );
    }
 } // namespace eosio

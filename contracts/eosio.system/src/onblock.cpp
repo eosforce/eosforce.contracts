@@ -50,9 +50,8 @@ namespace eosio {
       }
 
       uint32_t bp_last_amount = 0;
-      bpmonitor_table bpm_tbl( get_self(), get_self().value );
-      auto monitor_bp = bpm_tbl.find(bpname);
-      if ( monitor_bp != bpm_tbl.end() ) {
+      auto monitor_bp = _bpmonitors.find(bpname);
+      if ( monitor_bp != _bpmonitors.end() ) {
          bp_last_amount = monitor_bp->last_block_num;
       }
 
@@ -105,6 +104,10 @@ namespace eosio {
       // TODO: use table sorted datas
       for( const auto& it : _bps ) {
          if( is_producer_in_blacklist( it.name ) ) {
+            continue;
+         }
+
+         if ( is_producer_in_punished(it.name) ) {
             continue;
          }
 
@@ -193,9 +196,7 @@ namespace eosio {
             continue;
          }
 
-         bpmonitor_table bpm_tbl( get_self(), get_self().value );
-         auto monitor_bp = bpm_tbl.find(it->name);
-         if ( monitor_bp != bpm_tbl.end() && monitor_bp->bp_status == 2 ) {
+         if ( is_producer_in_punished(it->name) ) {
             continue;
          }
 
@@ -259,7 +260,6 @@ namespace eosio {
       } 
       schedules_table schs_tbl( get_self(), get_self().value );
       auto sch = schs_tbl.find( uint64_t( last_version ) );
-      bpmonitor_table bpm_tbl( get_self(), get_self().value );
       //find the first and the last
       uint32_t ifirst = 0,ilast = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
@@ -274,9 +274,9 @@ namespace eosio {
       uint64_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          // if no monitor_bp record,add one
-         auto monitor_bp = bpm_tbl.find( sch->producers[i].bpname );
-         if ( monitor_bp == bpm_tbl.end() ) {
-            bpm_tbl.emplace( get_self(), [&]( bp_monitor& s ) {
+         auto monitor_bp = _bpmonitors.find( sch->producers[i].bpname );
+         if ( monitor_bp == _bpmonitors.end() ) {
+            _bpmonitors.emplace( get_self(), [&]( bp_monitor& s ) {
                s.bpname = sch->producers[i].bpname;
                s.last_block_num = 0;
                s.consecutive_drain_block = 0;
@@ -287,7 +287,7 @@ namespace eosio {
                s.bp_status = 0;
                s.end_punish_block = 0;
             });
-            monitor_bp = bpm_tbl.find(sch->producers[i].bpname);
+            monitor_bp = _bpmonitors.find(sch->producers[i].bpname);
          }
 
          auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
@@ -318,7 +318,7 @@ namespace eosio {
          }
          total_bp_age += bp_age;
 
-         bpm_tbl.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+         _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
             if (is_change_producers) {
                s.last_block_num = 0;
             }

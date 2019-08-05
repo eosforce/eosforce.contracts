@@ -10,7 +10,8 @@ namespace eosio {
       : contract( s, code, ds )
       , _accounts( get_self(), get_self().value )
       , _bps( get_self(), get_self().value )
-      , _blackproducers( get_self(), get_self().value ) {}
+      , _blackproducers( get_self(), get_self().value )
+      , _bpmonitors( get_self(), get_self().value ) {}
 
    system_contract::~system_contract() {}
 } /// namespace eosio
