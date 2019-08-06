@@ -111,7 +111,7 @@ namespace eosio {
       }
 
       auto total_reward = reward_bp + reward_block;
-      check( 0 < total_reward.amount && total_reward.amount < MIN_CLAIM_BP,"need 0 < reward < 100 EOSC" );
+      check( MIN_CLAIM_BP < total_reward.amount,"need 100 EOSC < reward" );
 
       _accounts.modify( act, name{0}, [&]( account_info& a ) { 
          a.available += total_reward; 
