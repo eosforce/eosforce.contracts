@@ -191,7 +191,7 @@ namespace eosio {
 
       pledges ple_tbl(get_self(),payer);
       auto pledge = ple_tbl.find(pledge_name.value);
-      check(pledge == ple_tbl.end(),"the pledge record has exist");
+      check(pledge != ple_tbl.end(),"the pledge record has exist");
       check(pledge->pledge == asset(0,type->pledge.symbol),"the pledge is not 0,can not be closed");
       check(pledge->deduction == asset(0,type->pledge.symbol),"the deduction is not 0,can not be closed");
 
