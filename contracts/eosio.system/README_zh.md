@@ -891,3 +891,140 @@ plugin=eosio::heartbeat_plugin
 最小权限:
 
 - bppingname@active
+
+### 4.3 节点惩罚
+
+节点惩罚相关功能是在押金制度和节点监控等相关功能的基础上实现的。
+
+### 4.3.1 押金制度
+
+出块节点和收益节点需要缴纳一部分币作为押金才能获得收益，押金的合约是eosio.pledge，押金的类型是block.out，所有节点需要向eosio.pledge转账最少12522个EOSC 才能获得收益
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio.pledge open '["block.out","biosbpa","testopen"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 transfer biosbpa eosio.pledge "20000.0000 EOS" "block.out"
+```
+
+block.out 的押金类型的信息如下
+
+```bash
+{
+      "pledge_name": "block.out",
+      "deduction_account": "eosio",
+      "pledge": "2.0000 EOS"
+    }
+```
+
+deduction_account 是eosio 也就是拥有扣除押金和分配罚金的权限只有eosio有
+
+### 4.3.2 节点监控
+
+节点监控功能是监控节点是否连续出块和记录节点漏块信息的功能，和押金制度结合以后每漏一个块就会扣除10.0000 EOSC 的押金
+节点监控信息在表格bpmonitor上面
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio bpmonitor
+...
+{
+      "bpname": "eosforce",
+      "last_block_num": 0,
+      "consecutive_drain_block": 18,
+      "consecutive_produce_block": 0,
+      "total_drain_block": 18,
+      "stability": 1000,
+      "bock_age": 0,
+      "bp_status": 1,
+      "end_punish_block": 0
+    }
+...
+
+```
+
+上面eosforce节点连续漏块18个，一共漏块18个，bp_status是1是可以惩罚的状态
+节点历史漏块记录在表格drainblocks上面
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosforce drainblocks
+{
+  "rows": [{
+      "current_block_num": 1214,
+      "drain_block_num": 26
+    }
+  ],
+  "more": false
+}
+```
+
+### 4.3.4 提议惩罚节点
+
+在节点监控上面，如果一个BP连续漏块超过9个则会将BP 的bp_status设置为1，也就是待惩罚状态。用户可以提议惩罚该节点，惩罚节点的功能是punishbp，提议惩罚节点的用户需要在block.out上面有100 EOSC 的押金
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '["eosforce","biosbpa"]' -p biosbpa
+```
+
+一个节点每次只能有一个惩罚的议案，提议惩罚以后会在表格punishbps上面添加被提议惩罚的节点以及通过的节点以及实效的块高度
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio punishbps
+{
+  "rows": [{
+      "punish_bp_name": "eosforce",
+      "proposaler": "biosbpa",
+      "approve_bp": [],
+      "effective_block_num": 30155
+    }
+  ],
+  "more": false
+}
+```
+
+上面表格显示biosbpa提议惩罚eosforce,该提议将在30155块高度以后失效。
+
+### 4.3.5 同意惩罚节点
+
+节点被提议惩罚以后需要16个出块节点同意该节点才能被惩罚。同意惩罚节点的功能是approvebp
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '["eosforce","biosbpa"]' -p biosbpa
+```
+
+当第十六个出块节点同意以后被惩罚的节点将自动受到惩罚，合约会自动分配该节点的罚金奖励给提议惩罚该节点和同意惩罚该节点的BP(如果该节点没有缴纳罚金，则不会有任何奖励)
+
+### 4.3.6 被惩罚节点恢复
+
+节点被惩罚的时候会将bp_status设置为2，也就是正在被惩罚状态，end_punish_block是可以结束惩罚的块高度，当达到这个块高度以后被惩罚的节点可以通过bailpunish 将自己恢复正常
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio bpmonitor
+...
+{
+      "bpname": "eosforce",
+      "last_block_num": 0,
+      "consecutive_drain_block": 15,
+      "consecutive_produce_block": 0,
+      "total_drain_block": 41,
+      "stability": 1000,
+      "bock_age": 0,
+      "bp_status": 2,
+      "end_punish_block": 30310
+    }
+...
+```
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bailpunish '["eosforce"]' -p eosforce
+```
+
+## 4.4 分红改动
+
++ 增加出块分红，每个块0.5个EOSC打入出块分红池中
++ 投票分红每个块增加到3 EOSC 个，其中0.5个EOSC作为收益分红是分给节点的，2.5个EOSC打入投票分红池中
+
+### 4.4.1 BP领取出块分红和收益分红
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bpclaim '["biosbpa"]' -p biosbpa
+```
+
+**BP这部分分红只有超过100 EOSC 才能领取**
