@@ -11,24 +11,24 @@ namespace eosio {
    using std::string;
    using eosforce::CORE_SYMBOL;
 
-   struct [[eosio::table]] pledge_type {
-      name         pledge_name       = name{};
-      account_name deduction_account = eosforce::system_account.value;
-      asset        pledge            = asset( 0, CORE_SYMBOL );
+   struct [[eosio::table, eosio::contract("eosio.pledge")]] pledge_type {
+      name              pledge_name       = name{};
+      account_name      deduction_account = eosforce::system_account.value;
+      asset             pledge            = asset(0,CORE_SYMBOL);
 
       uint64_t primary_key()const { return pledge_name.value; }
    };
 
-   struct [[eosio::table]] pledge_info {
-      name  pledge_name = name{};
-      asset pledge      = asset( 0, CORE_SYMBOL );
-      asset deduction   = asset( 0, CORE_SYMBOL );
+   struct [[eosio::table, eosio::contract("eosio.pledge")]] pledge_info {
+      name              pledge_name       = name{};
+      asset             pledge            = asset(0,CORE_SYMBOL);
+      asset             deduction         = asset(0,CORE_SYMBOL);
 
       uint64_t primary_key()const { return pledge_name.value; }
    };
 
-   struct [[eosio::table]] reward_info {
-      asset reward = asset( 0, CORE_SYMBOL );
+   struct [[eosio::table, eosio::contract("eosio.pledge")]] reward_info {
+      asset             reward            = asset(0,CORE_SYMBOL);
 
       uint64_t primary_key()const { return reward.symbol.code().raw(); }
    };
