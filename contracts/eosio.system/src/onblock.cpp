@@ -187,7 +187,7 @@ namespace eosio {
 
          pledges bp_pledge(eosforce::pledge_account,it->name);
          auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
-         if ( pledge == bp_pledge.end() || pledge->pledge.amount <= BASE_BLOCK_OUT_PLEDGE ) {
+         if ( (pledge == bp_pledge.end() || pledge->pledge.amount <= BASE_BLOCK_OUT_PLEDGE)  && (is_func_open(eosforce::bp_punish)) ) {
             continue;
          }
 
