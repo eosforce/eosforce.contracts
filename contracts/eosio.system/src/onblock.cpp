@@ -197,22 +197,19 @@ namespace eosio {
 
          const auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP * double( it->total_staked ) /double( staked_all_bps ) );
 
-         auto bp_reward_info = bprewad_tbl.find(it->name);
-         if ( bp_reward_info == bprewad_tbl.end() ) {
-            bprewad_tbl.emplace( get_self(), [&]( bps_reward& s ) {
-               s.bpname = it->name;
-               s.reward = asset(0,CORE_SYMBOL);
-            } );
-            bp_reward_info = bprewad_tbl.find(it->name);
+         // reward bp account
+         auto bp_account_reward = bp_reward * 15 / 100 + bp_reward * 70 / 100 * it->commission_rate / 10000;
+         if( super_bps.find( it->name ) != super_bps.end() ) {
+            bp_account_reward += bp_reward * 15 / 100;
          }
 
-         auto bp_account_reward = bp_reward / 6 + bp_reward * 5 / 6 * it->commission_rate / 10000;
-         bprewad_tbl.modify( bp_reward_info, name{0}, [&]( bps_reward& b ) { 
-            b.reward += asset( bp_account_reward, CORE_SYMBOL ); 
+         const auto& act = _accounts.get( it->name, "bpname is not found in accounts table" );
+         _accounts.modify(act, name{0}, [&]( account_info& a ) { 
+            a.available += asset( bp_account_reward, CORE_SYMBOL ); 
          } );
 
          // reward pool
-         const auto bp_rewards_pool = bp_reward * 5 / 6 * ( 10000 - it->commission_rate ) / 10000;
+         const auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
          const auto& bp = _bps.get( it->name, "bpname is not registered" );
          _bps.modify( bp, name{0}, [&]( bp_info& b ) { 
             b.rewards_pool += asset( bp_rewards_pool, CORE_SYMBOL ); 
