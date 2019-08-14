@@ -348,3 +348,214 @@ executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637
 #         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS"}
 warning: transaction executed locally, but may not be confirmed by the network yet
 ```
+
+## BP related
+
+The following is the bp related action:
+
+### 4.1 Register BP
+
+The account can be registered as bp by `updatebp`, and the BP information will be modified if BP is already registered.
+
+```cpp
+   [[eosio::action]] void updatebp( const account_name& bpname,
+                                    const public_key& block_signing_key,
+                                    const uint32_t commission_rate,
+                                    const std::string& url );
+```
+
+parameter:
+
+- bpname : BP name
+- block_signing_key : Blocked signature public key, used for exporting
+- commission_rate : Distribution rate
+- url : Bp node URL information
+
+Least privilege:
+
+- voter@active
+
+Example:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio updatebp \
+'{ "bpname":"testd","block_signing_key":"EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c","commission_rate":1,"url":"http://eosforce.io" }' -p testd
+executed transaction: 35b43489ce9743ea74192cec6b1f8ddff9a94270f4090fd56d73c218eafcf9e8  176 bytes  236 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"100.0000 EOS","bpname":""}
+#         eosio <= eosio::updatebp              {"bpname":"testd","block_signing_key":"EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c","commi...
+warning: transaction executed locally, but may not be confirmed by the network yet         ]
+```
+
+### 4.2 BP heartbeat
+
+In order to ensure the stability of the EOSForce main network, the EOSForce system requires nodes to submit heartbeat actions to the chain.
+Each BP executes the `heartbeat` action every ten minutes, usually this operation is based on the heartbeat_plugin operation, so that the BP node is running.
+Although bp can accomplish similar functions by developing a timing program, its overall cost will be higher than the actual node, so this method can effectively promote the stability of the entire network.
+
+If the node does not complete `heartbeat` on time, the system will deduct its revenue.
+
+Because BP accounts involve reward tokens, they often don't expose private keys to some form of "hot" wallet, or even use BP accounts.
+Therefore, `heartbeat` cannot be operated directly based on the BP account, so BP needs to establish an account with the permission of the public key account to execute `heartbeat`,
+
+Configure heartbeat_plugin as follows:
+
+It is assumed here that the account name of BP is bp.name, and the public key of the block signature is EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c
+BP establishes a bp.ping account whose public key is EOS83e8NsiUvAi4aCePsGsbyxxiwQomsqcz2cLnHwCNjtUQVmDy3c, which is used to send heartbeats.
+
+```bash
+bp-mapping=bp.name=KEY:bp.ping
+plugin=eosio::heartbeat_plugin
+```
+
+> Note: Because the heartbeat also requires a fee, the node needs to ensure that the tokens sent by the heartbeat account are sufficient.
+
+```cpp
+   [[eosio::action]] void heartbeat( const account_name& bpname,
+                                     const time_point_sec& timestamp );
+```
+
+parameter:
+
+- bpname : BP name
+- time_point_sec : No parameters are used, subsequent can be used for chain time calibration, currently not in effect
+
+Least privilege:
+
+- bppingname@active
+
+### 4.3 Node penalty
+
+Node penalty related functions are implemented based on related functions such as deposit system and node monitoring.
+
+### 4.3.1 Deposit system
+
+The block node and the income node need to pay a portion of the deposit as a deposit to obtain the proceeds. The contract for the deposit is eosio.pledge, the type of the deposit is block.out, and all nodes need to transfer at least 12522 EOSCs to eosio.pledge to obtain the proceeds.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio.pledge open '["block.out","biosbpa","testopen"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 transfer biosbpa eosio.pledge "20000.0000 EOS" "block.out"
+```
+
+The deposit type information for block.out is as follows
+
+```bash
+{
+      "pledge_name": "block.out",
+      "deduction_account": "eosio",
+      "pledge": "2.0000 EOS"
+    }
+```
+
+Deduction_account is eosio, which has the authority to deduct the deposit and distribute the fine. Only eosio has
+
+### 4.3.2 Node monitoring
+
+The node monitoring function is a function of monitoring whether the node continuously exports the block and records the missing information of the node. After the combination of the deposit system, the deposit of 10.0000 EOSC is deducted for each missing block.
+Node monitoring information is above the table bpmonitor
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio bpmonitor
+...
+{
+      "bpname": "eosforce",
+      "last_block_num": 0,
+      "consecutive_drain_block": 18,
+      "consecutive_produce_block": 0,
+      "total_drain_block": 18,
+      "stability": 1000,
+      "bock_age": 0,
+      "bp_status": 1,
+      "end_punish_block": 0
+    }
+...
+
+```
+
+The above eosforce node continuously leaks 18 blocks, and a total of 18 blocks are leaked. The bp_status is 1 and can be punished.
+Node history leak blocks are recorded on the table drainblocks
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosforce drainblocks
+{
+  "rows": [{
+      "current_block_num": 1214,
+      "drain_block_num": 26
+    }
+  ],
+  "more": false
+}
+```
+
+### 4.3.4 Proposed penalty node
+
+On the node monitoring, if a BP consecutively leaks more than 9 blocks, BP's bp_status is set to 1, which is the state to be punished. The user can propose to punish the node. The function of the penalty node is punishbp. The user who proposes to punish the node needs to have a deposit of 100 EOSC on the block.out.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '["eosforce","biosbpa"]' -p biosbpa
+```
+
+A node can only have one penalty action at a time. After the proposed penalty, the proposed penalty node will be added to the table punishbps and the passed node and the effective block height.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio punishbps
+{
+  "rows": [{
+      "punish_bp_name": "eosforce",
+      "proposaler": "biosbpa",
+      "approve_bp": [],
+      "effective_block_num": 30155
+    }
+  ],
+  "more": false
+}
+```
+
+The table above shows that biosbpa proposes to punish eosforce, which will expire after 30,155 blocks.
+
+### 4.3.5 Agree to punish node
+
+After the node is proposed to be punished, it needs 16 outbound nodes to agree to the node to be punished. The function of agreeing to punish the node is approvebp
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '["eosforce","biosbpa"]' -p biosbpa
+```
+
+When the 16th outbound node agrees that the node that will be punished in the future will be automatically punished, the contract will automatically assign the node's penalty reward to the BP that proposes to punish the node and agree to punish the node (if the node does not pay the penalty, then There will be any rewards)
+
+### 4.3.6 Punished node recovery
+
+When the node is punished, it will set bp_status to 2, that is, it is being punished. End_punish_block is the block height that can end the penalty. When the block height is reached, the node that is punished can restore itself to normal through the bailpunish function.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 get table eosio eosio bpmonitor
+...
+{
+      "bpname": "eosforce",
+      "last_block_num": 0,
+      "consecutive_drain_block": 15,
+      "consecutive_produce_block": 0,
+      "total_drain_block": 41,
+      "stability": 1000,
+      "bock_age": 0,
+      "bp_status": 2,
+      "end_punish_block": 30310
+    }
+...
+```
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bailpunish '["eosforce"]' -p eosforce
+```
+
+## 4.4 Dividend change
+
++ Increase the block dividend, 0.5 EOSC per block into the block dividend pool
++ The voting dividends increased to 3 EOSC per block, of which 0.5 EOSCs were distributed to the nodes as dividends, and 2.5 EOSCs were entered into the voting pool.
+
+### 4.4.1 BP receives block dividends and dividends
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bpclaim '["biosbpa"]' -p biosbpa
+```
+
+**This part of BP's dividends can only be collected if it exceeds 100 EOSC.**
