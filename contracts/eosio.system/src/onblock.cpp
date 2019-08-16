@@ -75,6 +75,14 @@ namespace eosio {
          update_elected_bps();
       }
 
+      if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
+         const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
+         _accounts.modify( b1, name{0}, [&]( account_info& a ) {
+            a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
+         } );
+      }
+
+
       if (sch != schs_tbl.end()) {
          schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {

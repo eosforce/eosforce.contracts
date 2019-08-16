@@ -34,6 +34,7 @@ namespace eosio {
    static constexpr uint32_t BLOCK_OUT_REWARD = 0; 
    static constexpr uint32_t PUNISH_BP_LIMIT = 28800; 
    static constexpr uint32_t MIN_CLAIM_BP = 100*10000; 
+   static constexpr int BLOCK_REWARDS_B1           = 3000;
    
    static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;
    static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
