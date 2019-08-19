@@ -244,7 +244,8 @@ namespace eosio {
    void system_contract::votefix( const account_name& voter,
                                   const account_name& bpname,
                                   const name& type,
-                                  const asset& stake ) {
+                                  const asset& stake,
+                                  const uint32_t& stake_typ ) {
       require_auth( name{voter} );
 
       // All fix-time voting is new
