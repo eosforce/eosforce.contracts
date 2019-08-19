@@ -57,8 +57,16 @@ namespace eosio {
    }
 
    void system_contract::heartbeat( const account_name& bpname, const time_point_sec& timestamp ) {
+      require_auth( bpname );
+
       check( _bps.find( bpname ) != _bps.end(), "bpname is not registered" );
-      heartbeat_imp( bpname, timestamp );
+
+      const auto current_time_sec = time_point_sec( current_time_point() );
+
+      const auto diff_time = current_time_sec.sec_since_epoch() - timestamp.sec_since_epoch();
+      // TODO: use diff_time to make a more precise time
+
+      heartbeat_imp( bpname, current_block_num(), current_time_sec );
    }
 
    void system_contract::removebp( const account_name& bpname ) {

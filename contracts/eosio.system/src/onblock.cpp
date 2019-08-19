@@ -66,7 +66,7 @@ namespace eosio {
       make_global_votestate( curr_block_num );
 
       // producer a block is also make a heartbeat
-      heartbeat_imp( bpname, current_time_sec );
+      heartbeat_imp( bpname, curr_block_num, current_time_sec );
 
       // reward bps
       reward_bps( block_producers, curr_block_num, current_time_sec );
