@@ -249,6 +249,13 @@ warning: transaction executed locally, but may not be confirmed by the network y
 因为涉及到投票奖励, 所以当用户解除定期投票之后, 投票的信息并不会被删去, 系统只是简单的设置一个flag, 标示该定期投票已失效,
 在用户领取完投票奖励之后, 该信息会被删去, 并返还用户RAM.
 
+定期投票可以基于用户的Token, 也可以基于用户当前待赎回中的Token, 这个根据`stake_typ`的不同而不同.
+
+stake_typ 参数如下:
+
+- use_account_token 1 : 基于用户账户中的EOSC
+- use_unstaking_token 2 : 基于用户待赎回中的EOSC
+
 定期投票信息存储在`fixvotes`表中, 可以查询到:
 
 ```bash
@@ -315,7 +322,8 @@ warning: transaction executed locally, but may not be confirmed by the network y
          [[eosio::action]] void votefix( const account_name& voter,
                                          const account_name& bpname,
                                          const name& type,
-                                         const asset& stake );
+                                         const asset& stake,
+                                         const uint32_t& stake_typ );
 ```
 
 参数:
@@ -324,6 +332,7 @@ warning: transaction executed locally, but may not be confirmed by the network y
 - bpname : 所投节点
 - type : 定期投票类型
 - stake : 投票的核心代币数量
+- stake_typ : 为1时使用用户token投票, 为2时使用用户待赎回时的token投票
 
 最小权限:
 

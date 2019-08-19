@@ -51,6 +51,11 @@ namespace eosio {
       PUNISHED
    };
 
+   enum vote_stake_typ : uint32_t {
+      use_account_token   = 1,
+      use_unstaking_token = 2
+   };
+
    // tables
    struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
       account_name name      = 0;
@@ -297,7 +302,8 @@ namespace eosio {
          [[eosio::action]] void votefix( const account_name& voter,
                                          const account_name& bpname,
                                          const name& type,
-                                         const asset& stake );
+                                         const asset& stake,
+                                         const uint32_t& stake_typ );
 
          [[eosio::action]] void revotefix( const account_name& voter,
                                            const uint64_t& key,

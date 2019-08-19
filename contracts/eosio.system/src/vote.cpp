@@ -244,7 +244,8 @@ namespace eosio {
    void system_contract::votefix( const account_name& voter,
                                   const account_name& bpname,
                                   const name& type,
-                                  const asset& stake ) {
+                                  const asset& stake,
+                                  const uint32_t& stake_typ ) {
       require_auth( name{voter} );
 
       // All fix-time voting is new
@@ -263,7 +264,32 @@ namespace eosio {
       check( stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token" );
       check( 0 < stake.amount && stake.amount % 10000 == 0,
              "need stake quantity >= 0 and quantity is integer" );
-      check( stake <= act.available, "need stake quantity <= your available balance" );
+
+      switch ( stake_typ ) {
+         case vote_stake_typ::use_account_token:
+            {
+               check( stake <= act.available, "need stake quantity <= your available balance" );
+               // modify account token
+               _accounts.modify( act, name{0}, [&]( account_info& a ) { 
+                  a.available -= stake; 
+               } );
+            }
+            break;
+
+         case vote_stake_typ::use_unstaking_token:
+            {
+               votes_table votes_tbl( get_self(), voter );
+               const auto& vts = votes_tbl.get( bpname, "voter have not add votes to the the producer yet" );
+               check( stake < vts.unstaking, "need stake quantity <= your unstaking token" );
+               votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) { 
+                  v.unstaking -= stake; 
+               } );
+            }
+            break;
+         
+         default:
+            check( false, "unsupport stake_typ!" );
+      }
 
       const auto curr_block_num = current_block_num();
 
@@ -284,11 +310,6 @@ namespace eosio {
          fvi.vote                        = stake;
          fvi.votepower_age.staked        = vote_stake_by_power;
          fvi.votepower_age.update_height = curr_block_num;
-      } );
-
-      // modify account token
-      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
-         a.available -= stake; 
       } );
 
       _bps.modify( bp, name{0}, [&]( bp_info& b ) {
