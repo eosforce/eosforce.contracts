@@ -57,7 +57,7 @@ namespace eosio {
 
 
       if (pre_block_out > bp_last_amount && pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
-         reward_block(curr_block_num,bpname,schedule_version,false);
+         reward_block( curr_block_num, bpname, schedule_version, false );
       }
 
       const auto current_time_sec = time_point_sec( current_time_point() );
@@ -71,8 +71,13 @@ namespace eosio {
       // reward bps
       reward_bps( block_producers, curr_block_num, current_time_sec );
 
+      const auto open_update_block_num = get_num_config_on_chain( "update.bp"_n );
       if( curr_block_num % UPDATE_CYCLE == 0 ) {
-         update_elected_bps();
+         // open_update_block_num not zero, it will update bps beforce open_update_block_num
+         if ( open_update_block_num < 0
+           || open_update_block_num <= static_cast<int64_t>(curr_block_num) ) {
+            update_elected_bps();
+         }
       }
 
       if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
