@@ -133,8 +133,8 @@ namespace eosio {
    };
 
    struct [[eosio::table, eosio::contract("eosio.system")]] heartbeat_info {
-      account_name   bpname;
-      time_point_sec timestamp;
+      account_name            bpname;
+      time_point_sec          timestamp;
 
       uint64_t primary_key() const { return bpname; }
    };
@@ -254,7 +254,9 @@ namespace eosio {
          inline const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
          inline void make_global_votestate( const uint32_t curr_block_num );
          inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta );
-         inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
+         inline void heartbeat_imp( const account_name& bpname,
+                                    const uint32_t& curr_block_num,
+                                    const time_point_sec& timestamp );
          inline bool is_producer_in_blacklist( const account_name& bpname ) const;
          inline bool is_producer_in_punished( const account_name& bpname ) const;
 
@@ -399,7 +401,9 @@ namespace eosio {
       } );
    }
 
-   inline void system_contract::heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
+   inline void system_contract::heartbeat_imp( const account_name& bpname,
+                                               const uint32_t& curr_block_num,
+                                               const time_point_sec& timestamp ) {
       hb_table hb_tbl( _self, _self.value );
 
       const auto hb_itr = hb_tbl.find( bpname );
@@ -409,7 +413,9 @@ namespace eosio {
             hb.timestamp = timestamp;
          } );
       } else {
-         hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { hb.timestamp = timestamp; } );
+         hb_tbl.modify( hb_itr, name{ bpname }, [&]( heartbeat_info& hb ) {
+            hb.timestamp = timestamp;
+         } );
       }
    }
 
