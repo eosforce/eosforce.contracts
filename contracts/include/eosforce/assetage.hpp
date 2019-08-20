@@ -43,6 +43,14 @@ namespace eosforce {
    using eosio::symbol;
    using eosio::symbol_code;
    using eosio::asset;
+   using eosio::name;
+   
+   static constexpr eosio::name system_account{"eosio"_n};
+   static constexpr eosio::name active_permission{"active"_n};
+   static constexpr eosio::name block_out_pledge{"block.out"_n};
+   static constexpr eosio::name pledge_account{"eosio.pledge"_n};
+
+   static constexpr auto bp_punish = "c.bppunish"_n;
 
    // asset age : asset age is a value equal asset * age by block num, in eosforce
    //             it used in many pos.

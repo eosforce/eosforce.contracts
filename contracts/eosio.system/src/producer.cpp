@@ -14,17 +14,16 @@ namespace eosio {
       check( url.size() < 64, "url too long" );
       check( 1 <= commission_rate && commission_rate <= 10000, "need 1 <= commission rate <= 10000" );
 
-      bps_table bps_tbl( _self, _self.value );
-      auto bp = bps_tbl.find( bpname );
-      if( bp == bps_tbl.end() ) {
-         bps_tbl.emplace( name{bpname}, [&]( bp_info& b ) {
+      auto bp = _bps.find( bpname );
+      if( bp == _bps.end() ) {
+         _bps.emplace( name{bpname}, [&]( bp_info& b ) {
             b.name = bpname;
             b.block_signing_key = block_signing_key;
             b.commission_rate = commission_rate;
             b.url = url;
          } );
       } else {
-         bps_tbl.modify( bp, name{}, [&]( bp_info& b ) {
+         _bps.modify( bp, name{}, [&]( bp_info& b ) {
             b.block_signing_key = block_signing_key;
             b.commission_rate = commission_rate;
             b.url = url;
@@ -34,13 +33,13 @@ namespace eosio {
 
    void system_contract::setemergency( const account_name& bpname, const bool emergency ) {
       require_auth( name{bpname} );
-      bps_table bps_tbl( _self, _self.value );
-      const auto& bp = bps_tbl.get( bpname, "bpname is not registered" );
+
+      const auto& bp = _bps.get( bpname, "bpname is not registered" );
 
       cstatus_table cstatus_tbl( _self, _self.value );
-      const auto& cstatus = cstatus_tbl.get( ("chainstatus"_n).value, "get chainstatus fatal" );
+      const auto& cstatus = cstatus_tbl.get( chainstatus_name.value, "get chain status fatal" );
 
-      bps_tbl.modify( bp, name{0}, [&]( bp_info& b ) { 
+      _bps.modify( bp, name{0}, [&]( bp_info& b ) { 
          b.emergency = emergency; 
       } );
 
@@ -48,7 +47,7 @@ namespace eosio {
 
       int proposal = 0;
       for( const auto& name : block_producers ) {
-         const auto& b = bps_tbl.get( name.value, "setemergency: bpname is not registered" );
+         const auto& b = _bps.get( name.value, "setemergency: bpname is not registered" );
          proposal += b.emergency ? 1 : 0;
       }
 
@@ -58,26 +57,74 @@ namespace eosio {
    }
 
    void system_contract::heartbeat( const account_name& bpname, const time_point_sec& timestamp ) {
-      bps_table bps_tbl( _self, _self.value );
-      check( bps_tbl.find( bpname ) != bps_tbl.end(), "bpname is not registered" );
-      heartbeat_imp( bpname, timestamp );
+      require_auth( bpname );
+
+      check( _bps.find( bpname ) != _bps.end(), "bpname is not registered" );
+
+      const auto current_time_sec = time_point_sec( current_time_point() );
+
+      const auto diff_time = current_time_sec.sec_since_epoch() - timestamp.sec_since_epoch();
+      // TODO: use diff_time to make a more precise time
+
+      heartbeat_imp( bpname, current_block_num(), current_time_sec );
    }
 
    void system_contract::removebp( const account_name& bpname ) {
       require_auth( _self );
 
-      blackproducer_table blackproducer( _self, _self.value );
-      auto bp = blackproducer.find( bpname );
-      if( bp == blackproducer.end() ) {
-         blackproducer.emplace( name{bpname}, [&]( producer_blacklist& b ) {
+      auto bp = _blackproducers.find( bpname );
+      if( bp == _blackproducers.end() ) {
+         _blackproducers.emplace( name{bpname}, [&]( producer_blacklist& b ) {
             b.bpname = bpname;
             b.isactive = false;
          } );
       } else {
-         blackproducer.modify( bp, name{0}, [&]( producer_blacklist& b ) { 
+         _blackproducers.modify( bp, name{0}, [&]( producer_blacklist& b ) { 
             b.isactive = false;
          } );
       }
+   }
+
+   void system_contract::bpclaim( const account_name& bpname ) {
+      require_auth( name{bpname} );
+      const auto& act = _accounts.get( bpname, "bpname is not found in accounts table" );
+
+      auto reward_block = asset(0,CORE_SYMBOL);
+      blockreward_table br_tbl( get_self(), get_self().value );
+      auto cblockreward = br_tbl.find( bp_reward_name.value );
+      auto monitor_bp = _bpmonitors.find( bpname );
+      if ( cblockreward != br_tbl.end() && monitor_bp != _bpmonitors.end() ) {
+         reward_block = monitor_bp->bock_age * cblockreward->reward_block_out / cblockreward->total_block_age;
+         check( reward_block < cblockreward->reward_block_out,"need reward_block < total_block_out");
+
+         br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) { 
+            s.total_block_age -= monitor_bp->bock_age;
+            s.reward_block_out -= reward_block;
+         } );
+
+         _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+            s.bock_age = 0;
+          } );
+      }
+
+      auto reward_bp = asset(0,CORE_SYMBOL);
+      bpreward_table bprewad_tbl( _self, _self.value );
+      auto bp_reward_info = bprewad_tbl.find(bpname);
+      if ( bp_reward_info != bprewad_tbl.end() ) {
+         reward_bp = bp_reward_info->reward;
+
+         bprewad_tbl.modify( bp_reward_info, name{0}, [&]( bps_reward& b ) { 
+            b.reward = asset( 0, CORE_SYMBOL ); 
+         } );
+      }
+
+      auto total_reward = reward_bp + reward_block;
+      check( MIN_CLAIM_BP < total_reward.amount,"need 100 EOSC < reward" );
+
+      _accounts.modify( act, name{0}, [&]( account_info& a ) { 
+         a.available += total_reward; 
+      } );
+
    }
 
 } // namespace eosio

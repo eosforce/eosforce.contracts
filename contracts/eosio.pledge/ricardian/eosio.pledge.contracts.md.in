@@ -1,0 +1,121 @@
+<h1 class="contract">addtype</h1>
+
+---
+spec_version: "0.2.0"
+title: Add pledge type
+summary: 'add a pledge type named {{pledge_name}} and managed by {{deduction_account}},{{ram_payer}} pay the ram'
+---
+
+{{#if memo}}There is a memo attached to the create stating:
+{{memo}}
+{{/if}}
+
+If {{ram_payer}} is not already the RAM payer of their {{pledge_name}}, {{ram_payer}} will be designated as such. As a result, RAM will be deducted from {{ram_payer}}’s resources to refund the original RAM payer.
+
+If {{pledge_name}} has exist ,the action will be failed
+
+<h1 class="contract">addpledge</h1>
+
+---
+spec_version: "0.2.0"
+title: add pledge
+summary: 'user can add pledge with this action notify eosio contract transfer to the contract account'
+---
+
+{{#if memo}}There is a memo attached to the add pledge stating:
+{{memo}}
+{{/if}}
+
+If {{from}} is not already the RAM payer of the pledge the action will be failed.should Call the open function first
+
+<h1 class="contract">open</h1>
+
+---
+spec_version: "0.2.0"
+title: create a record of the pledge
+summary: 'user can open a record of a pledge before you add pledge'
+---
+
+{{#if memo}}There is a memo attached to the open pledge record stating:
+{{memo}}
+{{/if}}
+
+If the pledge record has exist ,the action will return without a error be occured
+
+<h1 class="contract">close</h1>
+
+---
+spec_version: "0.2.0"
+title: close the record of the pledge
+summary: 'user can close the record of pledge if the record is empty'
+---
+
+{{#if memo}}There is a memo attached to the close pledge record stating:
+{{memo}}
+{{/if}}
+
+If the pledge record has pledge or deduction ,the action will be failed
+
+<h1 class="contract">deduction</h1>
+
+---
+spec_version: "0.2.0"
+title: deduction the pledge
+summary: 'the deduction_account can deducte the pledge'
+---
+
+{{#if memo}}There is a memo attached to the deducte pledge stating:
+{{memo}}
+{{/if}}
+
+If the pledge asset is 0,it will be deduction to negative number.
+
+<h1 class="contract">withdraw</h1>
+
+---
+spec_version: "0.2.0"
+title: withdraw the pledge
+summary: 'the user can withdraw the pledge'
+---
+
+{{#if memo}}There is a memo attached to the withdraw pledge stating:
+{{memo}}
+{{/if}}
+
+If the pledge has be withdrawed finished,the record will not be destroy until you close it
+
+<h1 class="contract">allotreward</h1>
+
+---
+spec_version: "0.2.0"
+title: allot reward to some user on the deduction
+summary: 'the deduction_account can allot reward to user use the deduction money'
+---
+
+{{#if memo}}There is a memo attached to the allot reward stating:
+{{memo}}
+{{/if}}
+
+If the pledge was a negative number，the reward number should be less then deduction
+
+<h1 class="contract">getreward</h1>
+
+---
+spec_version: "0.2.0"
+title: get reward 
+summary: 'user can get reward if the deduction_account allot reward to you'
+---
+
+{{#if memo}}There is a memo attached to the get reward stating:
+{{memo}}
+{{/if}}
+
+
+
+
+
+
+
+
+
+
