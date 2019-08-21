@@ -259,6 +259,13 @@ the user needs to manually cancel the fix-time vote, in which the locked token w
 Because system need calc voting reward even after the user cancels a fix-time voting, the fix-time vote information will not be deleted. The system simply sets a flag to indicate that a voting has expired.
 After the user claim the voting reward, the information will be deleted and returned to the user RAM.
 
+Fix-time voting can use token in account, or use token unstaking, it based on the `stake_typ` param.
+
+stake_typ param:
+
+- use_account_token 1 : use EOSC in account
+- use_unstaking_token 2 : use EOSC unstaking
+
 Fix-time voting information is stored in the `fixvotes` table and can be queried:
 
 ```bash
@@ -325,8 +332,10 @@ Fix-time voting is based on the `votefix` action:
          [[eosio::action]] void votefix( const account_name& voter,
                                          const account_name& bpname,
                                          const name& type,
-                                         const asset& stake );
+                                         const asset& stake,
+                                         const uint32_t& stake_typ );
 ```
+
 
 Parameter:
 
@@ -334,6 +343,7 @@ Parameter:
 - bpname : bp name
 - type : fix-time voting type
 - stake : core token to vote
+- stake_typ : 1 is use token in account, 2 is use token unstaking
 
 Minimum privilege:
 
@@ -341,11 +351,23 @@ Minimum privilege:
 
 Example:
 
+use token in account to vote:
+
 ```bash
-./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS"]' -p testd
+./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS", 1]' -p testd
 executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
 #         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.2500 EOS","bpname":""}
-#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS"}
+#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS","stake_typ":1}
+warning: transaction executed locally, but may not be confirmed by the network yet
+```
+
+use token unstaking to vote:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS", 2]' -p testd
+executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.2500 EOS","bpname":""}
+#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS","stake_typ":2}
 warning: transaction executed locally, but may not be confirmed by the network yet
 ```
 
