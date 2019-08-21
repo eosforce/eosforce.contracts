@@ -190,11 +190,11 @@ namespace eosio {
       votes_table votes_tbl( get_self(), voter );
       const auto& vts = votes_tbl.find( bpname );
 
-      auto newest_voteage = 0;
+      int128_t newest_voteage = 0;
 
       // current vote voteage
       if( vts != votes_tbl.end() ) {
-         newest_voteage += vts->voteage.get_age( curr_block_num );
+         newest_voteage += static_cast<int128_t>(vts->voteage.get_age( curr_block_num ));
          votes_tbl.modify( vts, name{0}, [&]( vote_info& v ) {
             v.voteage.clean_age( curr_block_num );
          } );
@@ -208,7 +208,7 @@ namespace eosio {
       auto idx_for_bp = fix_time_votes_tbl.get_index<"bybp"_n>();
       for( auto fvi = idx_for_bp.find( bpname ); 
            fvi != idx_for_bp.end() && fvi->bpname == bpname; /*nothing*/ ) {
-         newest_voteage += fvi->get_age( curr_block_num );
+         newest_voteage += static_cast<int128_t>(fvi->get_age( curr_block_num ));
 
          if( !fvi->is_withdraw ) {
             idx_for_bp.modify( fvi, name{0}, [&]( fix_time_vote_info& v ) {
