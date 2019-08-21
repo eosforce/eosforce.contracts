@@ -351,6 +351,7 @@ warning: transaction executed locally, but may not be confirmed by the network y
 ```
 
 使用赎回中的token投定期票:
+
 ```bash
 ./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS", 2]' -p testd
 executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
