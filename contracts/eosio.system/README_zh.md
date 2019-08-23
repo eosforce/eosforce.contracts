@@ -340,13 +340,26 @@ stake_typ 参数如下:
 
 示例:
 
+使用token投定期票:
+
 ```bash
-./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS"]' -p testd
+./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS", 1]' -p testd
 executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
 #         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.2500 EOS","bpname":""}
-#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS"}
+#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS","stake_typ":1}
 warning: transaction executed locally, but may not be confirmed by the network yet
 ```
+
+使用赎回中的token投定期票:
+
+```bash
+./cleos -u https://w1.eosforce.cn:443 push action eosio votefix '["testd", "biosbpc", "fvote.a", "100.0000 EOS", 2]' -p testd
+executed transaction: 505b30ff5c3676197a48c9ea7d0e8ef8cd8457681797a4ce2878eff637a4c55d  152 bytes  419 us
+#         eosio <= eosio::onfee                 {"actor":"testd","fee":"0.2500 EOS","bpname":""}
+#         eosio <= eosio::votefix               {"voter":"testd","bpname":"biosbpc","type":"fvote.a","stake":"100.0000 EOS","stake_typ":2}
+warning: transaction executed locally, but may not be confirmed by the network yet
+```
+
 
 ### 3.3 更换定期投票节点
 
