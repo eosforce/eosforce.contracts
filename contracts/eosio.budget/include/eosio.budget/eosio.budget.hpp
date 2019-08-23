@@ -13,6 +13,7 @@ namespace eosio {
    using eosforce::CORE_SYMBOL;
 
    static constexpr name EOSIO_BUDGET = "eosio.budget"_n;
+   static constexpr int64_t APPROVE_BLOCK_NUM = 15 * 28800;
 
    struct [[eosio::table, eosio::contract("eosio.budget")]] committee_info {
       name    budget_name    = EOSIO_BUDGET;
@@ -30,7 +31,7 @@ namespace eosio {
       uint32_t section;
       uint32_t takecoin_num;
       uint32_t approve_end_block_num;
-      uint32_t over_end_block_num;
+      uint32_t end_block_num;
 
       uint64_t primary_key()const { return id; }
    };
@@ -48,9 +49,10 @@ namespace eosio {
       uint64_t  id;
       uint64_t  montion_id;
       string content;
-      uint32_t  takecoin_num;
       asset quantity;
       account_name receiver;
+      uint32_t section;
+      uint32_t end_block_num;
       vector<account_name> requested;
       vector<account_name> approved;
       vector<account_name> unapproved;
@@ -79,11 +81,11 @@ namespace eosio {
 
          [[eosio::action]] void unapprove( account_name approver,uint64_t id );
 
-         [[eosio::action]] void takecoin( account_name proposer,uint64_t id );
+         [[eosio::action]] void takecoin( account_name proposer,uint64_t montion_id,string content,asset quantity );
 
-         [[eosio::action]] void agreecoin( account_name approver,uint64_t id );
+         [[eosio::action]] void agreecoin( account_name approver,account_name proposer,uint64_t id );
          
-         [[eosio::action]] void unagreecoin( account_name approver,uint64_t id );
+         [[eosio::action]] void unagreecoin( account_name approver,account_name proposer,uint64_t id );
 
          [[eosio::action]] void turndown( uint64_t id );
          
