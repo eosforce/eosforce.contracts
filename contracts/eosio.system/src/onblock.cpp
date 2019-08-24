@@ -308,7 +308,7 @@ namespace eosio {
             drain_num += 1;
          }
          // if change producer all producer do not drain one block
-         if ( is_change_producers && i != ilast && ifirst != ilast ) { drain_num -= 1; }
+         if ( is_change_producers && ifirst != ilast ) { drain_num -= 1; }
 
          if (drain_num > BP_CYCLE_BLOCK_OUT) { drain_num = BP_CYCLE_BLOCK_OUT; }
          if (drain_num < 0) { drain_num = 0; }
