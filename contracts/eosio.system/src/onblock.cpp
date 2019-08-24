@@ -298,7 +298,7 @@ namespace eosio {
             monitor_bp = _bpmonitors.find(sch->producers[i].bpname);
          }
 
-         auto drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
+         int64_t drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
          auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;
          // between first and last drain one block      
          if ( ifirst <= i && i < ilast ){  
@@ -308,7 +308,10 @@ namespace eosio {
             drain_num += 1;
          }
          // if change producer all producer do not drain one block
-         if ( is_change_producers ) { drain_num -= 1; }
+         if ( is_change_producers && i != ilast && ifirst != ilast ) { drain_num -= 1; }
+
+         if (drain_num > BP_CYCLE_BLOCK_OUT) { drain_num = BP_CYCLE_BLOCK_OUT; }
+         if (drain_num < 0) { drain_num = 0; }
 
          if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > 2 ) {
             drainblock_table drainblock_tbl( get_self(),sch->producers[i].bpname );

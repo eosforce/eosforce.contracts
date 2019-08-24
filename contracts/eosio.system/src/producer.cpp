@@ -57,7 +57,7 @@ namespace eosio {
    }
 
    void system_contract::heartbeat( const account_name& bpname, const time_point_sec& timestamp ) {
-      require_auth( bpname );
+      require_auth( name{bpname} );
 
       check( _bps.find( bpname ) != _bps.end(), "bpname is not registered" );
 
