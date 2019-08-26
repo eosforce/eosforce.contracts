@@ -10,7 +10,7 @@ namespace eosio {
    budget::~budget() {}
 
 
-   void budget::handover( vector<account_name> committeers ) {
+   void budget::handover( vector<account_name> committeers ,string memo) {
       require_auth( get_self() );
       committee_table  committee_tbl( get_self(), get_self().value );
       auto committee = committee_tbl.find( EOSIO_BUDGET.value );
@@ -59,7 +59,7 @@ namespace eosio {
 
    }
 // 1.自动通过，2.处理过期
-   void budget::approve( account_name approver,uint64_t id ) {
+   void budget::approve( account_name approver,uint64_t id ,string memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       motion_table motion_tbl( get_self(), get_self().value );
@@ -88,7 +88,7 @@ namespace eosio {
       }
    }
 
-   void budget::unapprove( account_name approver,uint64_t id ) {
+   void budget::unapprove( account_name approver,uint64_t id ,string memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       motion_table motion_tbl( get_self(), get_self().value );
@@ -125,7 +125,7 @@ namespace eosio {
       check( montion != motion_tbl.end(), "no motion find");
       check( montion->end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
       check( montion->section == 1,"the motion section is not passed" );
-      check( montion->proposer == proposer,"the motion section is not passed" );
+      check( montion->proposer == proposer,"the takecoin proposer must be the motion proposer" );
       check( montion->quantity.symbol == quantity.symbol,"the symbol should be the same with motion quantity symbol");
       check( montion->quantity >= quantity,"the quantity must not be bigger then montion quantity");
 
@@ -147,7 +147,7 @@ namespace eosio {
 
    }
 
-   void budget::agreecoin( account_name approver,account_name proposer,uint64_t id ) {
+   void budget::agreecoin( account_name approver,account_name proposer,uint64_t id ,string memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       takecoin_table takecoin_tbl(get_self(),proposer);
@@ -190,7 +190,7 @@ namespace eosio {
 
    }
 
-   void budget::unagreecoin( account_name approver,account_name proposer,uint64_t id ) {
+   void budget::unagreecoin( account_name approver,account_name proposer,uint64_t id ,string memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       takecoin_table takecoin_tbl(get_self(),proposer);
@@ -216,7 +216,7 @@ namespace eosio {
       }
    }
 
-   void budget::turndown( uint64_t id ) {
+   void budget::turndown( uint64_t id ,string memo) {
       require_auth( get_self() );
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( id );

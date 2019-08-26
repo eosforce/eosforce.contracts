@@ -73,21 +73,21 @@ namespace eosio {
          ~budget();
 
       public:
-         [[eosio::action]] void handover( vector<account_name> committeers );
+         [[eosio::action]] void handover( vector<account_name> committeers ,string memo);
 
          [[eosio::action]] void propose( account_name proposer,string title,string content,asset quantity,uint32_t end_num );
 
-         [[eosio::action]] void approve( account_name approver,uint64_t id );
+         [[eosio::action]] void approve( account_name approver,uint64_t id ,string memo);
 
-         [[eosio::action]] void unapprove( account_name approver,uint64_t id );
+         [[eosio::action]] void unapprove( account_name approver,uint64_t id ,string memo);
 
          [[eosio::action]] void takecoin( account_name proposer,uint64_t montion_id,string content,asset quantity );
 
-         [[eosio::action]] void agreecoin( account_name approver,account_name proposer,uint64_t id );
+         [[eosio::action]] void agreecoin( account_name approver,account_name proposer,uint64_t id ,string memo);
          
-         [[eosio::action]] void unagreecoin( account_name approver,account_name proposer,uint64_t id );
+         [[eosio::action]] void unagreecoin( account_name approver,account_name proposer,uint64_t id ,string memo);
 
-         [[eosio::action]] void turndown( uint64_t id );
+         [[eosio::action]] void turndown( uint64_t id ,string memo);
          
    };
 
