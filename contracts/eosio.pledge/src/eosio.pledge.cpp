@@ -196,5 +196,24 @@ namespace eosio {
       ple_tbl.erase( pledge );
    }
 
+   void pledge::amendpledge( const name& pledge_name,
+                            const account_name& pledger,
+                            const asset& pledge,
+                            const asset& deduction,
+                            const string& memo ) {
+      require_auth( get_self() );
+      pledges ple_tbl(get_self(),pledger);
+      auto pledge_inf = ple_tbl.find(pledge_name.value);
+      check(pledge_inf != ple_tbl.end(),"the pledge record has exist");
+
+      check(pledge_inf->pledge.symbol == pledge.symbol,"the pledge is not 0,can not be closed");
+      check(pledge_inf->deduction.symbol == deduction.symbol,"the deduction is not 0,can not be closed");
+
+      ple_tbl.modify( pledge_inf, name{}, [&]( pledge_info& b ) { 
+         b.pledge = pledge;
+         b.deduction = deduction;
+      } );
+   }
+
 
 } /// namespace eosio
