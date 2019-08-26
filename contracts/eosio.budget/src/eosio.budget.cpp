@@ -65,7 +65,7 @@ namespace eosio {
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( id );
       check( montion != motion_tbl.end(), "no motion find");
-      check( montion->approve_end_block_num < currnet_block,"the motion has exceeded the approve deadline" );
+      check( montion->approve_end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
       
 
       approver_table approve_tbl( get_self(), montion->proposer );
@@ -94,7 +94,7 @@ namespace eosio {
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( id );
       check( montion != motion_tbl.end(), "no motion find");
-      check( montion->approve_end_block_num < currnet_block,"the motion has exceeded the approve deadline" );
+      check( montion->approve_end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
       
 
       approver_table approve_tbl( get_self(), montion->proposer );
@@ -123,7 +123,7 @@ namespace eosio {
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( montion_id );
       check( montion != motion_tbl.end(), "no motion find");
-      check( montion->end_block_num < currnet_block,"the motion has exceeded the approve deadline" );
+      check( montion->end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
       check( montion->section == 1,"the motion section is not passed" );
       check( montion->proposer == proposer,"the motion section is not passed" );
       check( montion->quantity.symbol == quantity.symbol,"the symbol should be the same with motion quantity symbol");
@@ -153,7 +153,7 @@ namespace eosio {
       takecoin_table takecoin_tbl(get_self(),proposer);
       auto takecoin_info = takecoin_tbl.find( id );
       check(takecoin_info != takecoin_tbl.end(),"take coin motion not find");
-      check(takecoin_info->end_block_num < currnet_block,"the motion has exceeded the approve deadline");
+      check(takecoin_info->end_block_num > currnet_block,"the motion has exceeded the approve deadline");
       check(takecoin_info->section == 0,"the motion section is not propose");
 
       auto itr = std::find_if( takecoin_info->requested.begin(), takecoin_info->requested.end(), [&](const account_name& a) { return a == approver; } );
@@ -196,7 +196,7 @@ namespace eosio {
       takecoin_table takecoin_tbl(get_self(),proposer);
       auto takecoin_info = takecoin_tbl.find( id );
       check(takecoin_info != takecoin_tbl.end(),"take coin motion not find");
-      check(takecoin_info->end_block_num < currnet_block,"the motion has exceeded the approve deadline");
+      check(takecoin_info->end_block_num > currnet_block,"the motion has exceeded the approve deadline");
       check(takecoin_info->section == 0,"the motion section is not propose");
 
       auto itr = std::find_if( takecoin_info->requested.begin(), takecoin_info->requested.end(), [&](const account_name& a) { return a == approver; } );
