@@ -1,114 +1,67 @@
-<h1 class="contract">addtype</h1>
+<h1 class="contract">handover</h1>
 
 ---
 spec_version: "0.2.0"
-title: Add pledge type
-summary: 'add a pledge type named {{pledge_name}} and managed by {{deduction_account}},{{ram_payer}} pay the ram'
+title: hand over the member of Committee
+summary: 'clear the former member of the committee and add new member of the committee'
 ---
 
-{{#if memo}}There is a memo attached to the create stating:
-{{memo}}
-{{/if}}
-
-If {{ram_payer}} is not already the RAM payer of their {{pledge_name}}, {{ram_payer}} will be designated as such. As a result, RAM will be deducted from {{ram_payer}}’s resources to refund the original RAM payer.
-
-If {{pledge_name}} has exist ,the action will be failed
-
-<h1 class="contract">addpledge</h1>
+<h1 class="contract">propose</h1>
 
 ---
 spec_version: "0.2.0"
-title: add pledge
-summary: 'user can add pledge with this action notify eosio contract transfer to the contract account'
+title: Add a new proposal 
+summary: 'user can add a new propose with this action'
 ---
 
-{{#if memo}}There is a memo attached to the add pledge stating:
-{{memo}}
-{{/if}}
-
-If {{from}} is not already the RAM payer of the pledge the action will be failed.should Call the open function first
-
-<h1 class="contract">open</h1>
+<h1 class="contract">approve</h1>
 
 ---
 spec_version: "0.2.0"
-title: create a record of the pledge
-summary: 'user can open a record of a pledge before you add pledge'
+title: pass a proposal 
+summary: 'the member of the committee use this to pass a proposal'
 ---
 
-{{#if memo}}There is a memo attached to the open pledge record stating:
-{{memo}}
-{{/if}}
-
-If the pledge record has exist ,the action will return without a error be occured
-
-<h1 class="contract">close</h1>
+<h1 class="contract">unapprove</h1>
 
 ---
 spec_version: "0.2.0"
-title: close the record of the pledge
-summary: 'user can close the record of pledge if the record is empty'
+title: Reject a proposal
+summary: 'the member of the committee use this to reject a proposal'
 ---
 
-{{#if memo}}There is a memo attached to the close pledge record stating:
-{{memo}}
-{{/if}}
-
-If the pledge record has pledge or deduction ,the action will be failed
-
-<h1 class="contract">deduction</h1>
+<h1 class="contract">takecoin</h1>
 
 ---
 spec_version: "0.2.0"
-title: deduction the pledge
-summary: 'the deduction_account can deducte the pledge'
+title: add a take coin motion
+summary: 'user can add a takecoin motion with this action'
 ---
 
-{{#if memo}}There is a memo attached to the deducte pledge stating:
-{{memo}}
-{{/if}}
-
-If the pledge asset is 0,it will be deduction to negative number.
-
-<h1 class="contract">withdraw</h1>
+<h1 class="contract">agreecoin</h1>
 
 ---
 spec_version: "0.2.0"
-title: withdraw the pledge
-summary: 'the user can withdraw the pledge'
+title: pass a take coin proposal
+summary: 'the member of the committee use this to pass a take coin proposal'
 ---
 
-{{#if memo}}There is a memo attached to the withdraw pledge stating:
-{{memo}}
-{{/if}}
-
-If the pledge has be withdrawed finished,the record will not be destroy until you close it
-
-<h1 class="contract">allotreward</h1>
+<h1 class="contract">unagreecoin</h1>
 
 ---
 spec_version: "0.2.0"
-title: allot reward to some user on the deduction
-summary: 'the deduction_account can allot reward to user use the deduction money'
+title: Reject a take coin proposal
+summary: 'the member of the committee use this to reject a take coin proposal'
 ---
 
-{{#if memo}}There is a memo attached to the allot reward stating:
-{{memo}}
-{{/if}}
-
-If the pledge was a negative number，the reward number should be less then deduction
-
-<h1 class="contract">getreward</h1>
+<h1 class="contract">turndown</h1>
 
 ---
 spec_version: "0.2.0"
-title: get reward 
-summary: 'user can get reward if the deduction_account allot reward to you'
+title: trun down a motion
+summary: 'the contract can turn down the motion'
 ---
 
-{{#if memo}}There is a memo attached to the get reward stating:
-{{memo}}
-{{/if}}
 
 
 

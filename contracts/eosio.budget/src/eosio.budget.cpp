@@ -58,7 +58,7 @@ namespace eosio {
       });
 
    }
-// 1.自动通过，2.处理过期
+
    void budget::approve( account_name approver,uint64_t id ,string memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
@@ -66,8 +66,8 @@ namespace eosio {
       auto montion = motion_tbl.find( id );
       check( montion != motion_tbl.end(), "no motion find");
       check( montion->approve_end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
+      check( montion->section == 0, "the section of motion is not Pending review");
       
-
       approver_table approve_tbl( get_self(), montion->proposer );
       auto approve_info = approve_tbl.find( id );
       check(approve_info != approve_tbl.end(),"no approve find");
