@@ -90,6 +90,12 @@ namespace eosio {
                                        const account_name& payer,
                                        const string& memo );
 
+         [[eosio::action]] void amendpledge( const name& pledge_name,
+                                             const account_name& pledger,
+                                             const asset& pledge,
+                                             const asset& deduction,
+                                             const string& memo );
+
          using addtype_action     = eosio::action_wrapper<"addtype"_n,     &pledge::addtype>;
          using deduction_action   = eosio::action_wrapper<"deduction"_n,   &pledge::deduction>;
          using withdraw_action    = eosio::action_wrapper<"withdraw"_n,    &pledge::withdraw>;
