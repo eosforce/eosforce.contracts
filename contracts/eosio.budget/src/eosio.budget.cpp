@@ -1,5 +1,6 @@
 #include <eosio.budget/eosio.budget.hpp>
 #include <../../eosio.system/include/eosio.system.hpp>
+#include <../../eosio.pledge/include/eosio.pledge/eosio.pledge.hpp>
 
 namespace eosio {
 
@@ -31,6 +32,12 @@ namespace eosio {
 
    void budget::propose( account_name proposer,string title,string content,asset quantity,uint32_t end_num ) {
       require_auth( name{proposer} );
+
+      pledges bp_pledge(eosforce::pledge_account,proposer);
+      auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+      check( pledge != bp_pledge.end(),"the proposer do not have pledge on block.out" );
+      check( pledge->pledge.amount > MIN_BUDGET_PLEDGE,"the pledge of proposer is not bigger then 100.0000 EOSC" );
+
       motion_table motion_tbl( get_self(), get_self().value );
 
       auto currnet_block = current_block_num();
@@ -119,11 +126,17 @@ namespace eosio {
 
    void budget::takecoin( account_name proposer,uint64_t montion_id,string content,asset quantity ) {
       require_auth( name{proposer} );
+      pledges bp_pledge(eosforce::pledge_account,proposer);
+      auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
+      check( pledge != bp_pledge.end(),"the proposer do not have pledge on block.out" );
+      check( pledge->pledge.amount > MIN_BUDGET_PLEDGE,"the pledge of proposer is not bigger then 100.0000 EOSC" );
+
       auto currnet_block = current_block_num();
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( montion_id );
       check( montion != motion_tbl.end(), "no motion find");
       check( montion->end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
+      check( montion->approve_end_block_num < currnet_block,"The motion has not passed the publicity period" );
       check( montion->section == 1,"the motion section is not passed" );
       check( montion->proposer == proposer,"the takecoin proposer must be the motion proposer" );
       check( montion->quantity.symbol == quantity.symbol,"the symbol should be the same with motion quantity symbol");
@@ -171,7 +184,6 @@ namespace eosio {
          check( montion != motion_tbl.end(),"the montion do not exist");
          check( montion->quantity >= takecoin_info->quantity,"the take coin quantity is bigger then motion quantity");
          check( montion->section == 1,"the montion section is not passed");
-         //打币，然后更新
          auto takecoin_sec = takecoin_tbl.find( id );
          takecoin_tbl.modify( takecoin_sec, name{}, [&]( auto& a ) { 
             a.section = 1;
