@@ -80,14 +80,12 @@ namespace eosio {
          }
       }
 
-      if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
-         const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
-         _accounts.modify( b1, name{0}, [&]( account_info& a ) {
-            a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
-         } );
-      }
-
-
+      // if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
+      //    const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
+      //    _accounts.modify( b1, name{0}, [&]( account_info& a ) {
+      //       a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
+      //    } );
+      // }
       if (sch != schs_tbl.end()) {
          schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
@@ -210,19 +208,24 @@ namespace eosio {
 
          const auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP * double( it->total_staked ) /double( staked_all_bps ) );
 
-         // reward bp account
-         auto bp_account_reward = bp_reward * 15 / 100 + bp_reward * 70 / 100 * it->commission_rate / 10000;
-         if( super_bps.find( it->name ) != super_bps.end() ) {
-            bp_account_reward += bp_reward * 15 / 100;
+         auto bp_account_reward = bp_reward / 6 + bp_reward * 5 / 6 * it->commission_rate / 10000;
+
+         bpreward_table bprewad_tbl( _self, _self.value );
+         auto bp_reward_info = bprewad_tbl.find(it->name);
+         if ( bp_reward_info == bprewad_tbl.end() ) {
+            bprewad_tbl.emplace( get_self(), [&]( auto& s ) { 
+               s.bpname = it->name;
+               s.reward = asset( bp_account_reward, CORE_SYMBOL );
+            } );
+         }
+         else {
+            bprewad_tbl.modify( bp_reward_info,name{}, [&]( auto& s ) { 
+               s.reward += asset( bp_account_reward, CORE_SYMBOL );
+            } );
          }
 
-         const auto& act = _accounts.get( it->name, "bpname is not found in accounts table" );
-         _accounts.modify(act, name{0}, [&]( account_info& a ) { 
-            a.available += asset( bp_account_reward, CORE_SYMBOL ); 
-         } );
-
          // reward pool
-         const auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
+         const auto bp_rewards_pool = bp_reward * 5 / 6 * ( 10000 - it->commission_rate ) / 10000;
          const auto& bp = _bps.get( it->name, "bpname is not registered" );
          _bps.modify( bp, name{0}, [&]( bp_info& b ) { 
             b.rewards_pool += asset( bp_rewards_pool, CORE_SYMBOL ); 
@@ -231,12 +234,12 @@ namespace eosio {
          sum_bps_reward += ( bp_account_reward + bp_rewards_pool );
       }
 
-      // reward eosfund
-      const auto total_eosfund_reward = BLOCK_REWARDS_BP - sum_bps_reward;
-      if( total_eosfund_reward > 0 ) {
-         const auto& eosfund = _accounts.get( ( "devfund"_n ).value, "devfund is not found in accounts table" );
-         _accounts.modify( eosfund, name{0}, [&]( account_info& a ) { 
-            a.available += asset( total_eosfund_reward, CORE_SYMBOL ); 
+      // reward budget_account
+      const auto total_eosbudget_reward = BLOCK_REWARDS_BP - sum_bps_reward + BLOCK_BUDGET_REWARD;
+      if( total_eosbudget_reward > 0 ) {
+         const auto& eosbudget = _accounts.get( eosforce::budget_account.value, "devfund is not found in accounts table" );
+         _accounts.modify( eosbudget, name{0}, [&]( account_info& a ) { 
+            a.available += asset( total_eosbudget_reward, CORE_SYMBOL ); 
          } );
       }
    }

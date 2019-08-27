@@ -49,6 +49,7 @@ namespace eosforce {
    static constexpr eosio::name active_permission{"active"_n};
    static constexpr eosio::name block_out_pledge{"block.out"_n};
    static constexpr eosio::name pledge_account{"eosio.pledge"_n};
+   static constexpr eosio::name budget_account{"eosc.budget"_n};
 
    static constexpr auto bp_punish = "c.bppunish"_n;
 
