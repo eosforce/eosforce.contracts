@@ -163,7 +163,7 @@ namespace eosio {
       }
       // 0.5% of staked_all_bps
       //const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
-      const auto rewarding_bp_staked_threshold = INCOME_MIN_SHAKE;
+      const auto rewarding_bp_staked_threshold = staked_all_bps / BLOCK_REWARDS_BP;
 
       auto hb_max = get_num_config_on_chain( "hb.max"_n );
       if( hb_max < 0 ) {

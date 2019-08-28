@@ -39,7 +39,6 @@ namespace eosio {
    static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;
    static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
    static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
-   static constexpr uint32_t INCOME_MIN_SHAKE = BASE_BLOCK_OUT_PLEDGE / 10000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
