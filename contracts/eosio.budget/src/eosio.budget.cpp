@@ -44,6 +44,7 @@ namespace eosio {
       auto id_temp = motion_tbl.available_primary_key();
       motion_tbl.emplace( name{proposer} ,[&]( auto& s ) { 
          s.id = id_temp;
+         s.root_id = 0;
          s.title = title;
          s.content = content;
          s.quantity = quantity;
@@ -52,6 +53,7 @@ namespace eosio {
          s.takecoin_num = 0;
          s.approve_end_block_num = currnet_block + APPROVE_BLOCK_NUM;
          s.end_block_num = end_num;
+         s.extern_data.clear();
       });
 
       committee_table  committee_tbl( get_self(), get_self().value );

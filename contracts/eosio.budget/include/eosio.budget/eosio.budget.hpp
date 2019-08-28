@@ -25,6 +25,7 @@ namespace eosio {
 
    struct [[eosio::table, eosio::contract("eosio.budget")]] motion_info {
       uint64_t id;
+      uint64_t root_id;
       string title;
       string content;
       asset quantity;
@@ -33,8 +34,10 @@ namespace eosio {
       uint32_t takecoin_num;
       uint32_t approve_end_block_num;
       uint32_t end_block_num;
+      vector< vector<char> > extern_data;
 
       uint64_t primary_key()const { return id; }
+      uint64_t get_root_id()const { return root_id; }
    };
 
    struct [[eosio::table, eosio::contract("eosio.budget")]] approval_info {
@@ -61,7 +64,9 @@ namespace eosio {
    };
 
    typedef eosio::multi_index<"committee"_n,   committee_info> committee_table;
-   typedef eosio::multi_index<"motions"_n,   motion_info> motion_table;
+   typedef eosio::multi_index<"motions"_n,   motion_info,
+      indexed_by< "byroot"_n,
+                  eosio::const_mem_fun<motion_info, uint64_t, &motion_info::get_root_id >>> motion_table;
    typedef eosio::multi_index<"approvers"_n,   approval_info> approver_table;
    typedef eosio::multi_index<"takecoins"_n,   takecoin_motion_info> takecoin_table;
 
