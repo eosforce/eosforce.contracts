@@ -24,10 +24,11 @@ namespace eosio {
          return;
       }
       uint32_t pre_block_out = 0;
+      bool is_change_sch = false;
       schedules_table schs_tbl( _self, _self.value );
       auto sch = schs_tbl.find( uint64_t( schedule_version ) );
       if( sch == schs_tbl.end() ) {
-         reward_block( curr_block_num,bpname,schedule_version,true );
+         is_change_sch = true;
 
          schs_tbl.emplace( eosforce::system_account, [&]( schedule_info& s ) {
             s.version = schedule_version;
@@ -49,15 +50,8 @@ namespace eosio {
          }
       }
 
-      uint32_t bp_last_amount = 0;
-      auto monitor_bp = _bpmonitors.find(bpname);
-      if ( monitor_bp != _bpmonitors.end() ) {
-         bp_last_amount = monitor_bp->last_block_num;
-      }
-
-
-      if (pre_block_out > bp_last_amount && pre_block_out - bp_last_amount >= BP_CYCLE_BLOCK_OUT) {
-         reward_block( curr_block_num, bpname, schedule_version, false );
+      if ( is_reward_block(is_change_sch,pre_block_out,bpname) ) {
+         reward_block( curr_block_num, bpname, schedule_version, is_change_sch );
       }
 
       const auto current_time_sec = time_point_sec( current_time_point() );
@@ -169,7 +163,7 @@ namespace eosio {
       }
       // 0.5% of staked_all_bps
       //const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
-      const auto rewarding_bp_staked_threshold = INCOME_MIN_SHAKE;
+      const auto rewarding_bp_staked_threshold = staked_all_bps / BLOCK_REWARDS_BP;
 
       auto hb_max = get_num_config_on_chain( "hb.max"_n );
       if( hb_max < 0 ) {
@@ -298,20 +292,8 @@ namespace eosio {
             monitor_bp = _bpmonitors.find(sch->producers[i].bpname);
          }
 
-         int64_t drain_num = monitor_bp->last_block_num + BP_CYCLE_BLOCK_OUT - sch->producers[i].amount;
-         auto producer_num = BP_CYCLE_BLOCK_OUT - drain_num;
-         // between first and last drain one block      
-         if ( ifirst <= i && i < ilast ){  
-            drain_num += 1;
-         }
-         else if ( ifirst > ilast && (ifirst <= i || i < ilast) ) {
-            drain_num += 1;
-         }
-         // if change producer all producer do not drain one block
-         if ( is_change_producers && ifirst != ilast ) { drain_num -= 1; }
-
-         if (drain_num > BP_CYCLE_BLOCK_OUT) { drain_num = BP_CYCLE_BLOCK_OUT; }
-         if (drain_num < 0) { drain_num = 0; }
+         int64_t drain_num = cal_drain_num(is_change_producers,i,ifirst,ilast,monitor_bp->last_block_num,sch->producers[i].amount);
+         auto producer_num = sch->producers[i].amount - monitor_bp->last_block_num; 
 
          if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > 2 ) {
             drainblock_table drainblock_tbl( get_self(),sch->producers[i].bpname );
@@ -372,5 +354,42 @@ namespace eosio {
          s.total_block_age += total_bp_age;
          s.reward_block_out += asset(total_producer_num * BLOCK_OUT_REWARD,CORE_SYMBOL);
       });
+   }
+
+   bool system_contract::is_reward_block(const bool &is_change_sch,const uint32_t &block_amount,const account_name &bpname) {
+      bool result = false;
+      if ( is_change_sch ) {
+         result = true;
+         return result;
+      }
+
+      uint32_t bp_last_amount = 0;
+      auto monitor_bp = _bpmonitors.find(bpname);
+      if ( monitor_bp != _bpmonitors.end() ) {
+         bp_last_amount = monitor_bp->last_block_num;
+      }
+
+      if ( block_amount > bp_last_amount && block_amount - bp_last_amount >= BP_CYCLE_BLOCK_OUT ) {
+         result = true;
+      }
+      return result;
+   }
+
+   int32_t system_contract::cal_drain_num(const bool &is_change_sch,const uint32_t index,const uint32_t &ifirst,const uint32_t &ilast,const uint32_t &pre_block_amount,const uint32_t &current_block_amount) {
+      int32_t result = 0;
+      result = pre_block_amount + BP_CYCLE_BLOCK_OUT - current_block_amount;
+       // between first and last drain one block      
+      if ( ifirst <= index && index < ilast ){  
+         result += 1;
+      }
+      else if ( ifirst > ilast && (ifirst <= index || index < ilast) ) {
+         result += 1;
+      }
+      // if change producer all producer do not drain one block
+      if ( is_change_sch && ifirst != ilast ) { result -= 1; }
+
+      if (result > BP_CYCLE_BLOCK_OUT) { result = BP_CYCLE_BLOCK_OUT; }
+      if (result < 0) { result = 0; }
+      return result;
    }
 } /// namespace eosio
