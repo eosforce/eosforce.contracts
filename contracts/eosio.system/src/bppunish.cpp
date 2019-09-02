@@ -40,6 +40,9 @@ namespace eosio {
       auto punish_bp = pb_tbl.find(bpname);
       check( punish_bp != pb_tbl.end() && punish_bp->effective_block_num > curr_block_num,"the bp was not Being resolved");
 
+      auto itr = std::find_if( punish_bp->approve_bp.begin(), punish_bp->approve_bp.end(), [&](const account_name& a) { return a == approver; } );
+      check( itr == punish_bp->approve_bp.end(), "the bp has approved" );
+
       pb_tbl.modify(punish_bp,name{0},[&]( punish_bp_info& s ) { 
          s.approve_bp.push_back(approver);
       });
