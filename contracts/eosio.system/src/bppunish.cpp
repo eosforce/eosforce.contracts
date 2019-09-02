@@ -123,4 +123,37 @@ namespace eosio {
       }
       return false;
    }
+
+   void system_contract::monitorevise( const account_name& bpname ) {
+      require_auth( get_self() );
+      for (auto iter = _bpmonitors.begin();iter != _bpmonitors.end();++iter) {
+         if ( iter->total_drain_block > WRONG_DRAIN_BLOCK ) {
+            auto total_drain_num = drainblock_revise(bpname);
+            _bpmonitors.modify( iter, name{0}, [&]( bp_monitor& s ) {
+               s.total_drain_block = total_drain_num;
+               s.bp_status = 0;
+            });
+         }
+      }
+   }
+
+   int32_t system_contract::drainblock_revise(const account_name &bpname) {
+      drainblock_table drainblock_tbl( get_self(),bpname );
+      bool drain_block_wrong = true;
+      int32_t result = 0;
+      while(drain_block_wrong) {
+         drain_block_wrong = false;
+         for (auto iter = drainblock_tbl.begin();iter != drainblock_tbl.end();++iter) {
+            if ( iter->drain_block_num > WRONG_DRAIN_BLOCK ) {
+               drainblock_tbl.erase(iter);
+               drain_block_wrong = true;
+               break;
+            }
+            else {
+               result += iter->drain_block_num;
+            }
+         }
+      }
+
+   }
 }

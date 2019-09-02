@@ -40,6 +40,8 @@ namespace eosio {
    static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
    static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
 
+   static constexpr uint32_t WRONG_DRAIN_BLOCK = 10000000; 
+
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
    static constexpr name bp_reward_name     = "bpreward"_n;
@@ -271,6 +273,8 @@ namespace eosio {
          bool is_reward_block(const bool &is_change_sch,const uint32_t &block_amount,const account_name &bpname);
          int32_t cal_drain_num(const bool &is_change_sch,const uint32_t index,const uint32_t &ifirst,const uint32_t &ilast,const uint32_t &pre_block_amount,const uint32_t &current_block_amount);
 
+         int32_t drainblock_revise(const account_name &bpname);
+
       public:
          [[eosio::action]] void transfer( const account_name& from,
                                           const account_name& to,
@@ -336,6 +340,8 @@ namespace eosio {
          [[eosio::action]] void bailpunish( const account_name& bpname );
 
          [[eosio::action]] void bpclaim( const account_name& bpname );
+
+         [[eosio::action]] void monitorevise( const account_name& bpname );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
