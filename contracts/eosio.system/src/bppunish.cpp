@@ -128,7 +128,7 @@ namespace eosio {
       require_auth( get_self() );
       for (auto iter = _bpmonitors.begin();iter != _bpmonitors.end();++iter) {
          if ( iter->total_drain_block > WRONG_DRAIN_BLOCK ) {
-            auto total_drain_num = drainblock_revise(bpname);
+            auto total_drain_num = drainblock_revise(iter->bpname);
             _bpmonitors.modify( iter, name{0}, [&]( bp_monitor& s ) {
                s.total_drain_block = total_drain_num;
                s.bp_status = 0;
@@ -138,22 +138,23 @@ namespace eosio {
    }
 
    int32_t system_contract::drainblock_revise(const account_name &bpname) {
-      drainblock_table drainblock_tbl( get_self(),bpname );
       bool drain_block_wrong = true;
+      
       int32_t result = 0;
       while(drain_block_wrong) {
-         drain_block_wrong = false;
-         for (auto iter = drainblock_tbl.begin();iter != drainblock_tbl.end();++iter) {
-            if ( iter->drain_block_num > WRONG_DRAIN_BLOCK ) {
-               drainblock_tbl.erase(iter);
-               drain_block_wrong = true;
-               break;
+            drain_block_wrong = false;
+            drainblock_table drainblock_tbl( get_self(),bpname );
+            for (auto itor = drainblock_tbl.begin();itor != drainblock_tbl.end();++itor) {
+               if ( itor->drain_block_num > WRONG_DRAIN_BLOCK ) {
+                  drainblock_tbl.erase(itor);
+                  drain_block_wrong = true;
+                  break;
+               }
+               else {
+                  result += itor->drain_block_num;
+               }
             }
-            else {
-               result += iter->drain_block_num;
-            }
-         }
-      }
-
+        }
+      return result;
    }
 }
