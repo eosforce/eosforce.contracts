@@ -39,7 +39,6 @@ namespace eosio {
    static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;
    static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
    static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
-   static constexpr uint32_t INCOME_MIN_SHAKE = BASE_BLOCK_OUT_PLEDGE / 10000; 
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
@@ -268,6 +267,9 @@ namespace eosio {
 
          bool is_super_bp( const account_name &bpname ) const;
          void exec_punish_bp( const account_name &bpname );
+
+         bool is_reward_block(const bool &is_change_sch,const uint32_t &block_amount,const account_name &bpname);
+         int32_t cal_drain_num(const bool &is_change_sch,const uint32_t index,const uint32_t &ifirst,const uint32_t &ilast,const uint32_t &pre_block_amount,const uint32_t &current_block_amount);
 
       public:
          [[eosio::action]] void transfer( const account_name& from,
