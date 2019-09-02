@@ -982,7 +982,7 @@ deduction_account 是eosio 也就是拥有扣除押金和分配罚金的权限�
 在节点监控上面，如果一个BP连续漏块超过9个则会将BP 的bp_status设置为1，也就是待惩罚状态。用户可以提议惩罚该节点，惩罚节点的功能是punishbp，提议惩罚节点的用户需要在block.out上面有100 EOSC 的押金
 
 ```bash
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '["eosforce","biosbpa"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '{"bpname":"eosforce","proposaler":"biosbpa"}' -p biosbpa
 ```
 
 一个节点每次只能有一个惩罚的议案，提议惩罚以后会在表格punishbps上面添加被提议惩罚的节点以及通过的节点以及实效的块高度
@@ -1008,10 +1008,10 @@ deduction_account 是eosio 也就是拥有扣除押金和分配罚金的权限�
 节点被提议惩罚以后需要16个出块节点同意该节点才能被惩罚。同意惩罚节点的功能是approvebp
 
 ```bash
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '["eosforce","biosbpa"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '{"bpname":"eosforce","approver":"biosbpa"}' -p biosbpa
 ```
 
-当第十六个出块节点同意以后被惩罚的节点将自动受到惩罚，合约会自动分配该节点的罚金奖励给提议惩罚该节点和同意惩罚该节点的BP(如果该节点没有缴纳罚金，则不会有任何奖励)
+当第十六个出块节点同意以后被惩罚的节点将自动受到惩罚，合约会自动分配该节点的罚金奖励给提议惩罚该节点和同意惩罚该节点的BP(如果该节点没有缴纳罚金，则不会有任何奖励,分配的比例是：提出惩罚的人分得罚金的一半，其余同意的节点平分剩下的一半)
 
 ### 4.3.6 被惩罚节点恢复
 

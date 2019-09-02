@@ -513,7 +513,7 @@ Node history leak blocks are recorded on the table drainblocks
 On the node monitoring, if a BP consecutively leaks more than 9 blocks, BP's bp_status is set to 1, which is the state to be punished. The user can propose to punish the node. The function of the penalty node is punishbp. The user who proposes to punish the node needs to have a deposit of 100 EOSC on the block.out.
 
 ```bash
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '["eosforce","biosbpa"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio punishbp '{"bpname":"eosforce","proposaler":"biosbpa"}' -p biosbpa
 ```
 
 A node can only have one penalty action at a time. After the proposed penalty, the proposed penalty node will be added to the table punishbps and the passed node and the effective block height.
@@ -539,10 +539,10 @@ The table above shows that biosbpa proposes to punish eosforce, which will expir
 After the node is proposed to be punished, it needs 16 outbound nodes to agree to the node to be punished. The function of agreeing to punish the node is approvebp
 
 ```bash
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '["eosforce","biosbpa"]' -p biosbpa
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio approvebp '{"bpname":"eosforce","approver":"biosbpa"}' -p biosbpa
 ```
 
-When the 16th outbound node agrees that the node that will be punished in the future will be automatically punished, the contract will automatically assign the node's penalty reward to the BP that proposes to punish the node and agree to punish the node (if the node does not pay the penalty, then There will be any rewards)
+When the 16th outbound node agrees that the node that will be punished in the future will be automatically punished, the contract will automatically assign the node's penalty reward to the BP that proposes to punish the node and agree to punish the node (if the node does not pay the penalty, then There will be any rewards，The proportion of the distribution is: the person who punishes the penalty is divided into half of the penalty, and the remaining agreed nodes are equally divided into the remaining half.)
 
 ### 4.3.6 Punished node recovery
 
