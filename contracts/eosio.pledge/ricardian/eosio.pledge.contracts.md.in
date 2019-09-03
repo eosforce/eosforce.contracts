@@ -110,6 +110,19 @@ summary: 'user can get reward if the deduction_account allot reward to you'
 {{memo}}
 {{/if}}
 
+<h1 class="contract">dealreward</h1>
+
+---
+spec_version: "0.2.0"
+title: deal reward 
+summary: 'the deducte can deal deduction to rewarders,the first get half and the other equalize the rest'
+---
+
+{{#if memo}}There is a memo attached to the deal reward stating:
+{{memo}}
+{{/if}}
+
+
 
 
 
