@@ -73,7 +73,6 @@ namespace eosio {
       const auto curr_block_num = current_block_num();
       check( punish_bp != pb_tbl.end() && punish_bp->effective_block_num > curr_block_num,"the bp was not Being resolved");
 
-      int isize = punish_bp->approve_bp.size();
       int approve_bp_num = 0;
       for (const auto& approve_bp : punish_bp->approve_bp){
          if (is_super_bp(approve_bp)) {
