@@ -94,7 +94,8 @@ namespace eosio {
       else {
          _lastproducers.modify( lastproducer_info, name{0}, [&]( auto& s ) { 
             s.producers[s.next_index] = bpname;
-            s.next_index = ((++s.next_index) % MAX_LAST_PRODUCER_SIZE);
+            ++s.next_index;
+            s.next_index %= MAX_LAST_PRODUCER_SIZE;
          } );
       }
 

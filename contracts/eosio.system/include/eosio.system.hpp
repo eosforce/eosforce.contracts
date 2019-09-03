@@ -199,7 +199,7 @@ namespace eosio {
    };
 
    struct [[eosio::table, eosio::contract("eosio.system")]] last_producer {
-      account_name   name = bp_producer_name.value;
+      account_name   name;
       uint32_t next_index;
       uint32_t max_size;
       std::vector<account_name> producers;

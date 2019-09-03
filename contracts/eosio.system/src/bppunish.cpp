@@ -40,7 +40,8 @@ namespace eosio {
       auto punish_bp = pb_tbl.find(bpname);
       check( punish_bp != pb_tbl.end() && punish_bp->effective_block_num > curr_block_num,"the bp was not Being resolved");
 
-      auto itr = std::find_if( punish_bp->approve_bp.begin(), punish_bp->approve_bp.end(), [&](const account_name& a) { return a == approver; } );
+      auto itr = std::find_if( punish_bp->approve_bp.begin(), punish_bp->approve_bp.end(),
+         [&](const account_name& a) { return a == approver; } );
       check( itr == punish_bp->approve_bp.end(), "the bp has approved" );
 
       pb_tbl.modify(punish_bp,name{0},[&]( punish_bp_info& s ) { 
@@ -74,8 +75,8 @@ namespace eosio {
 
       int isize = punish_bp->approve_bp.size();
       int approve_bp_num = 0;
-      for (int i = 0; i != isize; ++i ){
-         if (is_super_bp(punish_bp->approve_bp[i])) {
+      for (const auto approve_bp : punish_bp->approve_bp){
+         if (is_super_bp(approve_bp)) {
             ++approve_bp_num;
          }
       }
@@ -96,13 +97,13 @@ namespace eosio {
          else {
             vector<account_name> reward_account;
             reward_account.push_back(punish_bp->proposaler);
-            for (int i = 0; i != isize; ++i ){ 
-               if ( is_super_bp(punish_bp->approve_bp[i]) ) {
-                  reward_account.push_back(punish_bp->approve_bp[i]);
+            for (const auto approve_bp : punish_bp->approve_bp){
+               if ( is_super_bp(approve_bp) ) {
+                  reward_account.push_back(approve_bp);
                }
             }
             pledge::dealreward_action temp{ eosforce::pledge_account, {  {eosforce::system_account, eosforce::active_permission} } };
-            temp.send( eosforce::block_out_pledge,bpname,reward_account,std::string("deal reward") );
+            temp.send( eosforce::block_out_pledge,bpname,reward_account,std::string("") );
          }
          pb_tbl.erase(punish_bp);
       }
@@ -121,16 +122,28 @@ namespace eosio {
    }
 
    void system_contract::monitorevise( const account_name& bpname ) {
+
       require_auth( get_self() );
-      for (auto iter = _bpmonitors.begin();iter != _bpmonitors.end();++iter) {
-         if ( iter->total_drain_block > WRONG_DRAIN_BLOCK ) {
-            auto total_drain_num = drainblock_revise(iter->bpname);
-            _bpmonitors.modify( iter, name{0}, [&]( bp_monitor& s ) {
-               s.total_drain_block = total_drain_num;
-               s.bp_status = BPSTATUS::NORMAL;
-            });
+      auto monitor_bp = _bpmonitors.find(bpname);
+      if ( monitor_bp != _bpmonitors.end() && monitor_bp->total_drain_block > WRONG_DRAIN_BLOCK ) {
+         auto total_drain_num = drainblock_revise(monitor_bp->bpname);
+         _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+            s.total_drain_block = total_drain_num;
+            s.bp_status = BPSTATUS::NORMAL;
+         });
+      }
+      else {
+         for (auto iter = _bpmonitors.begin();iter != _bpmonitors.end();++iter) {
+            if ( iter->total_drain_block > WRONG_DRAIN_BLOCK ) {
+               auto total_drain_num = drainblock_revise(iter->bpname);
+               _bpmonitors.modify( iter, name{0}, [&]( bp_monitor& s ) {
+                  s.total_drain_block = total_drain_num;
+                  s.bp_status = BPSTATUS::NORMAL;
+               });
+            }
          }
       }
+
    }
 
    int32_t system_contract::drainblock_revise(const account_name &bpname) {
@@ -167,12 +180,8 @@ namespace eosio {
       auto itr = std::find_if( lastproducer_info->producers.begin(), lastproducer_info->producers.end(), [&](const account_name& a) { return a == bpname; } );
       check( itr != lastproducer_info->producers.end(), "the bp is not in last producers" );
 
-      if (monitor_bp->total_drain_block > WRONG_DRAIN_BLOCK) {
-         auto total_drain_num = drainblock_revise(monitor_bp->bpname);
-         _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
-            s.total_drain_block = total_drain_num;
-            s.bp_status = BPSTATUS::NORMAL;
-         });
-      }
+      _bpmonitors.modify( monitor_bp, name{0}, [&]( bp_monitor& s ) {
+         s.bp_status = BPSTATUS::NORMAL;
+      });
    }
 }

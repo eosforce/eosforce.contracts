@@ -241,12 +241,11 @@ namespace eosio {
       auto approve_reward = pre_allot / (2 * (rewarder.size() - 1));
 
       auto reward_account = rewarder[0];
-      reward_assign(deduction,reward_account,report_reward);
+      reward_assign(deduction,reward_account,report_reward - approve_reward);
 
       auto isize = rewarder.size();
-      for (int i=1;i!= isize; ++i) {
-         reward_account = rewarder[i];
-         reward_assign(deduction,reward_account,approve_reward);
+      for (const auto reward:rewarder) {
+         reward_assign(deduction,reward,approve_reward);
       }
 
    }
