@@ -81,6 +81,23 @@ namespace eosio {
          } );
       }
 
+      auto lastproducer_info = _lastproducers.find(bp_producer_name.value);
+      if (lastproducer_info == _lastproducers.end()) {
+         _lastproducers.emplace( eosforce::system_account, [&]( auto& s ) { 
+            s.name = bp_producer_name.value;
+            s.max_size = MAX_LAST_PRODUCER_SIZE;
+            s.next_index = 1;
+            s.producers.resize(MAX_LAST_PRODUCER_SIZE);
+            s.producers[0] = bpname;
+         } );
+      }
+      else {
+         _lastproducers.modify( lastproducer_info, name{0}, [&]( auto& s ) { 
+            s.producers[s.next_index] = bpname;
+            s.next_index = ((++s.next_index) % MAX_LAST_PRODUCER_SIZE);
+         } );
+      }
+
 
       if (sch != schs_tbl.end()) {
          schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
