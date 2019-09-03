@@ -569,6 +569,14 @@ When the node is punished, it will set bp_status to 2, that is, it is being puni
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bailpunish '["eosforce"]' -p eosforce
 ```
 
+### 4.3.7 Restoring the node to be punished
+
+After the node continuously leaks 9 blocks, the bp_status state on the bpmonitor will be set to 1, that is, the BP can be punished. If the BP can normally exit the block, the state can be modified to restore the state to 0.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio removepunish '["biosbpg"]' -p biosbpg
+```
+
 ## 4.4 Dividend change
 
 + Increase the block dividend, 0.5 EOSC per block into the block dividend pool

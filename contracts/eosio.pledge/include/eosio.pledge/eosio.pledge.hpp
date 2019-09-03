@@ -9,6 +9,7 @@
 
 namespace eosio {
    using std::string;
+   using std::vector;
    using eosforce::CORE_SYMBOL;
 
    struct [[eosio::table, eosio::contract("eosio.pledge")]] pledge_type {
@@ -48,6 +49,7 @@ namespace eosio {
       private:
          // tables for self, self, just some muit-used tables
          pledgetypes _pt_tbl;
+         void reward_assign(const account_name &deductor,const account_name &rewarder,const asset &quantity);
 
       public:
          [[eosio::action]] void addtype( const name& pledge_name,
@@ -95,6 +97,11 @@ namespace eosio {
                                              const asset& pledge,
                                              const asset& deduction,
                                              const string& memo );
+         
+         [[eosio::action]] void dealreward( const name& pledge_name,
+                                            const account_name& pledger,
+                                            const vector<account_name>& rewarder, 
+                                            const string& memo );
 
          using addtype_action     = eosio::action_wrapper<"addtype"_n,     &pledge::addtype>;
          using deduction_action   = eosio::action_wrapper<"deduction"_n,   &pledge::deduction>;
@@ -103,6 +110,7 @@ namespace eosio {
          using allotreward_action = eosio::action_wrapper<"allotreward"_n, &pledge::allotreward>;
          using open_action        = eosio::action_wrapper<"open"_n,        &pledge::open>;
          using close_action       = eosio::action_wrapper<"close"_n,       &pledge::close>;
+         using dealreward_action  = eosio::action_wrapper<"dealreward"_n,       &pledge::dealreward>;
 
          inline static asset get_pledge( const name& pledge_name, const account_name& pledger ) {
             pledges pledge_tbl( eosforce::pledge_account, pledger );

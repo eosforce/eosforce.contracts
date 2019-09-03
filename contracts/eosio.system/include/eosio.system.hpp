@@ -40,9 +40,14 @@ namespace eosio {
    static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
    static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
 
+   static constexpr uint32_t WRONG_DRAIN_BLOCK = 10000000;
+
+   static constexpr uint32_t MAX_LAST_PRODUCER_SIZE = 120; 
+
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
    static constexpr name bp_reward_name     = "bpreward"_n;
+   static constexpr name bp_producer_name   = "bpproducer"_n;
 
    enum BPSTATUS : uint32_t { 
       NORMAL = 0,
@@ -193,6 +198,15 @@ namespace eosio {
       uint64_t primary_key() const { return bpname; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.system")]] last_producer {
+      account_name   name;
+      uint32_t next_index;
+      uint32_t max_size;
+      std::vector<account_name> producers;
+
+      uint64_t primary_key() const { return name; }
+   };
+
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -208,7 +222,8 @@ namespace eosio {
    typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
    typedef eosio::multi_index<"drainblocks"_n, drain_block_info>      drainblock_table;
    typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
-   typedef eosio::multi_index<"bpsreward"_n,   bps_reward>             bpreward_table;
+   typedef eosio::multi_index<"bpsreward"_n,   bps_reward>            bpreward_table;
+   typedef eosio::multi_index<"lastproducer"_n,last_producer>         lastproducer_table;
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -234,6 +249,7 @@ namespace eosio {
          bps_table           _bps;
          blackproducer_table _blackproducers;
          bpmonitor_table     _bpmonitors;
+         lastproducer_table  _lastproducers;
 
       private:
          // to bps in onblock
@@ -270,6 +286,8 @@ namespace eosio {
 
          bool is_reward_block(const bool &is_change_sch,const uint32_t &block_amount,const account_name &bpname);
          int32_t cal_drain_num(const bool &is_change_sch,const uint32_t index,const uint32_t &ifirst,const uint32_t &ilast,const uint32_t &pre_block_amount,const uint32_t &current_block_amount);
+
+         int32_t drainblock_revise(const account_name &bpname);
 
       public:
          [[eosio::action]] void transfer( const account_name& from,
@@ -336,6 +354,9 @@ namespace eosio {
          [[eosio::action]] void bailpunish( const account_name& bpname );
 
          [[eosio::action]] void bpclaim( const account_name& bpname );
+
+         [[eosio::action]] void monitorevise( const account_name& bpname );
+         [[eosio::action]] void removepunish( const account_name& bpname );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
@@ -352,6 +373,11 @@ namespace eosio {
    using votefix_action      = eosio::action_wrapper<"votefix"_n,      &system_contract::votefix>;
    using revotefix_action    = eosio::action_wrapper<"revotefix"_n,    &system_contract::revotefix>;
    using outfixvote_action   = eosio::action_wrapper<"outfixvote"_n,   &system_contract::outfixvote>;
+   using punishbp_action     = eosio::action_wrapper<"punishbp"_n,     &system_contract::punishbp>;
+   using approvebp_action    = eosio::action_wrapper<"approvebp"_n,    &system_contract::approvebp>;
+   using bailpunish_action   = eosio::action_wrapper<"bailpunish"_n,   &system_contract::bailpunish>;
+   using bpclaim_action      = eosio::action_wrapper<"bpclaim"_n,      &system_contract::bpclaim>;
+   using removepunish_action = eosio::action_wrapper<"removepunish"_n, &system_contract::removepunish>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {

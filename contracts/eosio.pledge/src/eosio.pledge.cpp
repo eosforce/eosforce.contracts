@@ -215,5 +215,55 @@ namespace eosio {
       } );
    }
 
+   void pledge::dealreward( const name& pledge_name,
+                            const account_name& pledger,
+                            const vector<account_name>& rewarder, 
+                            const string& memo ) {
+      const auto pt = _pt_tbl.find( pledge_name.value );
+      check( pt != _pt_tbl.end(), "the pledge type do not exist" );
+      check( rewarder.size() > 0, "the rewarder must exist" );
+      const auto deduction = pt->deduction_account;
+      require_auth( name{deduction} );
+
+      pledges ple_tbl( get_self(), pledger );
+      auto pledge = ple_tbl.find( pledge_name.value );
+      check( pledge != ple_tbl.end(), "the pledge do not exist" );
+      auto pre_allot = pledge->deduction;
+      if ( pledge->pledge < asset( 0, pledge->pledge.symbol ) ) {
+         pre_allot += pledge->pledge;
+      }
+      check( 0 < pre_allot.amount, "the quantity must be a positive number" );
+      ple_tbl.modify( pledge, name{}, [&]( pledge_info& b ) { 
+         b.deduction -= pre_allot;
+      });
+
+      auto report_reward = pre_allot / 2;
+      auto approve_reward = pre_allot / (2 * (rewarder.size() - 1));
+
+      auto reward_account = rewarder[0];
+      reward_assign(deduction,reward_account,report_reward - approve_reward);
+
+      auto isize = rewarder.size();
+      for (const auto& reward:rewarder) {
+         reward_assign(deduction,reward,approve_reward);
+      }
+
+   }
+
+   void pledge::reward_assign(const account_name &deductor,const account_name &rewarder,const asset &quantity) {
+
+      rewards rew_tbl( get_self(), rewarder );
+      auto reward_inf = rew_tbl.find( quantity.symbol.code().raw() );
+      if( reward_inf == rew_tbl.end() ) {
+         rew_tbl.emplace( name{deductor}, [&]( reward_info& b ) { 
+            b.reward = quantity;
+         } );
+      } else {
+         rew_tbl.modify( reward_inf, name{}, [&]( reward_info& b ) {
+            b.reward += quantity;
+         } );
+      }
+   }
+
 
 } /// namespace eosio
