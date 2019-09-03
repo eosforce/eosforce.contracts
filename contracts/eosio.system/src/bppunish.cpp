@@ -75,7 +75,7 @@ namespace eosio {
 
       int isize = punish_bp->approve_bp.size();
       int approve_bp_num = 0;
-      for (const auto approve_bp : punish_bp->approve_bp){
+      for (const auto& approve_bp : punish_bp->approve_bp){
          if (is_super_bp(approve_bp)) {
             ++approve_bp_num;
          }
@@ -97,7 +97,7 @@ namespace eosio {
          else {
             vector<account_name> reward_account;
             reward_account.push_back(punish_bp->proposaler);
-            for (const auto approve_bp : punish_bp->approve_bp){
+            for (const auto& approve_bp : punish_bp->approve_bp){
                if ( is_super_bp(approve_bp) ) {
                   reward_account.push_back(approve_bp);
                }

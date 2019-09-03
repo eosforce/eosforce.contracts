@@ -244,7 +244,7 @@ namespace eosio {
       reward_assign(deduction,reward_account,report_reward - approve_reward);
 
       auto isize = rewarder.size();
-      for (const auto reward:rewarder) {
+      for (const auto& reward:rewarder) {
          reward_assign(deduction,reward,approve_reward);
       }
 
