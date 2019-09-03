@@ -1038,6 +1038,14 @@ deduction_account 是eosio 也就是拥有扣除押金和分配罚金的权限�
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio bailpunish '["eosforce"]' -p eosforce
 ```
 
+### 4.3.7 即将被惩罚节点恢复
+
+节点连续漏够9个块以后bpmonitor上面的bp_status状态会设置为1，即BP可以被惩罚，如果BP能正常出块则可以修改这个状态，将这个状态恢复成0.
+
+```bash
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio removepunish '["biosbpg"]' -p biosbpg
+```
+
 ## 4.4 分红改动
 
 + 增加出块分红，每个块0.5个EOSC打入出块分红池中

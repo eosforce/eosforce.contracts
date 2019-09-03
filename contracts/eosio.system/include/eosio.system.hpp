@@ -373,6 +373,11 @@ namespace eosio {
    using votefix_action      = eosio::action_wrapper<"votefix"_n,      &system_contract::votefix>;
    using revotefix_action    = eosio::action_wrapper<"revotefix"_n,    &system_contract::revotefix>;
    using outfixvote_action   = eosio::action_wrapper<"outfixvote"_n,   &system_contract::outfixvote>;
+   using punishbp_action     = eosio::action_wrapper<"punishbp"_n,     &system_contract::punishbp>;
+   using approvebp_action    = eosio::action_wrapper<"approvebp"_n,    &system_contract::approvebp>;
+   using bailpunish_action   = eosio::action_wrapper<"bailpunish"_n,   &system_contract::bailpunish>;
+   using bpclaim_action      = eosio::action_wrapper<"bpclaim"_n,      &system_contract::bpclaim>;
+   using removepunish_action = eosio::action_wrapper<"removepunish"_n, &system_contract::removepunish>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {
