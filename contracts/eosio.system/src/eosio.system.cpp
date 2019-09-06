@@ -12,7 +12,8 @@ namespace eosio {
       , _bps( get_self(), get_self().value )
       , _blackproducers( get_self(), get_self().value )
       , _bpmonitors( get_self(), get_self().value )
-      , _lastproducers( get_self(), get_self().value ) {}
+      , _lastproducers( get_self(), get_self().value )
+      , _heartbinds( get_self(), get_self().value ) {}
 
    system_contract::~system_contract() {}
 } /// namespace eosio

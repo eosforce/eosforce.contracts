@@ -59,14 +59,20 @@ namespace eosio {
    void system_contract::heartbeat( const account_name& bpname, const time_point_sec& timestamp ) {
       require_auth( name{bpname} );
 
-      check( _bps.find( bpname ) != _bps.end(), "bpname is not registered" );
+      auto heartbind_info = _heartbinds.find(bpname);
+      account_name real_bpname = bpname;
+      if ( heartbind_info != _heartbinds.end() ) {
+         real_bpname = heartbind_info->bpname;
+      }
+
+      check( _bps.find( real_bpname ) != _bps.end(), "bpname is not registered" );
 
       const auto current_time_sec = time_point_sec( current_time_point() );
 
       const auto diff_time = current_time_sec.sec_since_epoch() - timestamp.sec_since_epoch();
       // TODO: use diff_time to make a more precise time
 
-      heartbeat_imp( bpname, current_block_num(), current_time_sec );
+      heartbeat_imp( real_bpname, current_block_num(), current_time_sec );
    }
 
    void system_contract::removebp( const account_name& bpname ) {
@@ -125,6 +131,20 @@ namespace eosio {
          a.available += total_reward; 
       } );
 
+   }
+
+   void system_contract::heartbind( const account_name& bpname,const account_name &user ) {
+      require_auth( name{bpname} );
+
+      auto heartbind_info = _heartbinds.find(user);
+      check( heartbind_info == _heartbinds.end(),"the user has bind to another bp" );
+
+      check( _bps.find( user ) == _bps.end(), "a bp can not bind to another bp" );
+
+      _heartbinds.emplace( name{bpname}, [&]( auto& b ) {
+         b.bpname = bpname;
+         b.user = user;
+      });
    }
 
 } // namespace eosio
