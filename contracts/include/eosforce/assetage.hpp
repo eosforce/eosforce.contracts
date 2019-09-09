@@ -4,6 +4,8 @@
 #include <eosio/asset.hpp>
 #include <eosio/crypto.hpp>
 
+#include <eosforce/eosforce.hpp>
+
 namespace eosforce {
    namespace utils{
       constexpr inline int64_t precision_base( const uint8_t decimals ) {
@@ -49,8 +51,6 @@ namespace eosforce {
    static constexpr eosio::name active_permission{"active"_n};
    static constexpr eosio::name block_out_pledge{"block.out"_n};
    static constexpr eosio::name pledge_account{"eosio.pledge"_n};
-
-   static constexpr auto bp_punish = "c.bppunish"_n;
 
    // asset age : asset age is a value equal asset * age by block num, in eosforce
    //             it used in many pos.
