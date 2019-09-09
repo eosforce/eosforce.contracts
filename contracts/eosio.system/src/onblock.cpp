@@ -74,12 +74,25 @@ namespace eosio {
          }
       }
 
-      // if( curr_block_num % REWARD_B1_CYCLE == 0 ) {
-      //    const auto& b1 = _accounts.get( ( "b1"_n ).value, "b1 is not found in accounts table" );
-      //    _accounts.modify( b1, name{0}, [&]( account_info& a ) {
-      //       a.available += asset( BLOCK_REWARDS_B1 * REWARD_B1_CYCLE, CORE_SYMBOL );
-      //    } );
-      // }
+      auto lastproducer_info = _lastproducers.find(bp_producer_name.value);
+      if (lastproducer_info == _lastproducers.end()) {
+         _lastproducers.emplace( eosforce::system_account, [&]( auto& s ) { 
+            s.name = bp_producer_name.value;
+            s.max_size = MAX_LAST_PRODUCER_SIZE;
+            s.next_index = 1;
+            s.producers.resize(MAX_LAST_PRODUCER_SIZE);
+            s.producers[0] = bpname;
+         } );
+      }
+      else {
+         _lastproducers.modify( lastproducer_info, name{0}, [&]( auto& s ) { 
+            s.producers[s.next_index] = bpname;
+            ++s.next_index;
+            s.next_index %= MAX_LAST_PRODUCER_SIZE;
+         } );
+      }
+
+
       if (sch != schs_tbl.end()) {
          schs_tbl.modify( sch, name{0}, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
