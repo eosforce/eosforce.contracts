@@ -19,6 +19,8 @@ namespace eosio {
              "need 0.0000 EOS < quantity < available balance" );
       check( memo.size() <= 256, "memo has more than 256 bytes" );
 
+      check( !is_account_freezed( from, current_block_num() ), "account is freezed by EOSC FIP #11" );
+
       require_recipient( name{from} );
       require_recipient( name{to} );
 
