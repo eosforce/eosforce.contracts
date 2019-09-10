@@ -1,3 +1,8 @@
+/**
+ *  @file
+ *  @copyright defined in eos/LICENSE.txt
+ */
+
 #include <eosio.msig/eosio.msig.hpp>
 
 #include <eosio/action.hpp>

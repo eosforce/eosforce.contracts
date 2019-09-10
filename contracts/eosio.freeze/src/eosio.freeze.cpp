@@ -1,8 +1,3 @@
-/**
- *  @file
- *  @copyright defined in eos/LICENSE.txt
- */
-
 #include <eosio.freeze/eosio.freeze.hpp>
 
 namespace eosio {
