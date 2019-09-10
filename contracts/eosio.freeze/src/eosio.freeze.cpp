@@ -38,10 +38,19 @@ namespace eosio {
          }
       }
 
-      freezed_stat_tbl.modify( fstat, name{committer}, [&]( freezed_table_state& fs ) {
-         fs.last_commit_block_num = current_block_num();
-         fs.freezed_size += added;
-      } );
+      auto fstat_up = freezed_stat_tbl.find( committer );
+      if( fstat_up == freezed_stat_tbl.end() ){
+         freezed_stat_tbl.emplace( name{committer}, [&]( freezed_table_state& fs ) {
+            fs.committer = committer;
+            fs.last_commit_block_num = current_block_num();
+            fs.freezed_size = added;
+         } );
+      }else{
+         freezed_stat_tbl.modify( fstat_up, name{committer}, [&]( freezed_table_state& fs ) {
+            fs.last_commit_block_num = current_block_num();
+            fs.freezed_size += added;
+         } );
+      }
 
       return;
    }
