@@ -34,3 +34,7 @@
 \.vscode/
 build/
 buildc/
+
+tools/push_freezeds/node_modules/
+
+tools/push_freezeds/dump-table-freezed*

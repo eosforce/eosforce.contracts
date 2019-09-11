@@ -1,0 +1,17 @@
+{
+  "name": "push_freezeds",
+  "version": "1.0.0",
+  "description": "push lost freezed accounts to chain",
+  "main": "src/push.js",
+  "scripts": {
+    "start": "node src/push.js",
+    "test": "node src/dump.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "eosforcejs2": "^0.1.0",
+    "node-fetch": "^2.6.0",
+    "util": "^0.12.1"
+  }
+}
