@@ -108,7 +108,7 @@ namespace eosio {
       check( fstat != freezed_stat_tbl.end(), "committer table no found" );
 
       check( fstat->state != static_cast<uint32_t>(freezed_table_stat_t::actived), "table has actived" );
-      check( fstat->state != static_cast<uint32_t>(freezed_table_stat_t::committing), "table has banned" );
+      check( fstat->state != static_cast<uint32_t>(freezed_table_stat_t::banned), "table has banned" );
 
       const auto is_has_locked = fstat->state != static_cast<uint32_t>(freezed_table_stat_t::committing);
       check( is_has_locked != is_locked, "no chang state" );
