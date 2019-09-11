@@ -8,7 +8,7 @@ add_contract(eosio.system eosio.system
    ${CMAKE_CURRENT_SOURCE_DIR}/src/bppunish.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/freeze.cpp)
 
-target_include_directories(eosio.system PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+target_include_directories(eosio.system PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../eosio.freeze/include)
 
 set_target_properties(eosio.system PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
