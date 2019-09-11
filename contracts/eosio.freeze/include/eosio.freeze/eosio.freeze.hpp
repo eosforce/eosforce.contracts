@@ -20,7 +20,6 @@ namespace eosio {
    struct [[eosio::table, eosio::contract("eosio.freeze")]] freezed {
       account_name account;
       uint32_t     unfreeze_block_num = 0; // unfreeze_block_num, 0 - 1024 is freeze forever
-      uint32_t     unused_            = 0;
       uint64_t primary_key()const { return account; }
    };
    typedef eosio::multi_index< "freezed"_n, freezed > freezeds;
