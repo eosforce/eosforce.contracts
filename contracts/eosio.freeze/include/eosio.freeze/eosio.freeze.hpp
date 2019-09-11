@@ -87,6 +87,9 @@ namespace eosio {
          // confirmact confirm a account is active from freeze account table
          [[eosio::action]] void confirmact( const account_name& account );
 
+         // actconfirmed activite confirmed account after freeze account table actived
+         [[eosio::action]] void actconfirmed( const account_name& account );
+
       private:
 
    };

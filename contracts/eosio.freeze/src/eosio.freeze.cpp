@@ -164,4 +164,35 @@ namespace eosio {
       return;
    }
 
+   // actconfirmed activite confirmed account after freeze account table actived
+   void lock_token::actconfirmed( const account_name& account ) {
+      require_auth( account );
+
+      global_freezed_state gfstate( get_self(), get_self().value );
+      check( gfstate.exists() , "freezed table not activited" );
+      
+      const auto act_table_committer = gfstate.get().committer;
+      check( act_table_committer != 0 , "freezed table not activited" );
+
+      activited_accounts act_account_tbl( get_self(), get_self().value );
+      auto itr = act_account_tbl.find( account );
+      check( itr != act_account_tbl.end(), "account not confirm actived" );
+
+      act_account_tbl.erase(itr);
+
+      freezed_stat freezed_stat_tbl( get_self(), get_self().value );
+      auto fstat = freezed_stat_tbl.find( act_table_committer );
+      check( fstat != freezed_stat_tbl.end(), "no freezed stat found" );
+
+      freezeds freeze_tbl( get_self(), act_table_committer );
+
+      auto del_acc_itr = freeze_tbl.find( account );
+      check( del_acc_itr != freeze_tbl.end(), "del account not in table" );
+      freeze_tbl.erase(del_acc_itr);
+
+      freezed_stat_tbl.modify( fstat, name{}, [&]( freezed_table_state& fs ) {
+         fs.freezed_size -= 1;
+      } );
+   }
+
 } /// namespace eosio
