@@ -47,12 +47,12 @@ namespace eosio {
    };
    typedef eosio::multi_index< "freezedstat"_n, freezed_table_state > freezed_stat;
 
-   struct [[eosio::table, eosio::contract("eosio.freeze")]] gfreezestat {
+   struct [[eosio::table, eosio::contract("eosio.freeze")]] gfstate {
       account_name committer = 0; // if is not 0, mean freezed table actived
 
-      EOSLIB_SERIALIZE( gfreezestat, (committer) )
+      EOSLIB_SERIALIZE( gfstate, (committer) )
    };
-   typedef eosio::singleton< "gfstate"_n, gfreezestat > global_freezed_state;
+   typedef eosio::singleton< "gfstate"_n, gfstate > global_freezed_state;
 
    struct [[eosio::table, eosio::contract("eosio.freeze")]] activited_account {
       account_name account;
