@@ -51,6 +51,7 @@ namespace eosforce {
    static constexpr eosio::name pledge_account{"eosio.pledge"_n};
 
    static constexpr auto bp_punish = "c.bppunish"_n;
+   static constexpr auto c_heartbeat = "c.heartbeat"_n;
 
    // asset age : asset age is a value equal asset * age by block num, in eosforce
    //             it used in many pos.
