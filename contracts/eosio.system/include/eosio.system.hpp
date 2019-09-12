@@ -289,6 +289,8 @@ namespace eosio {
 
          int32_t drainblock_revise(const account_name &bpname);
 
+         bool is_account_freezed( const account_name& account, const uint32_t curr_block_num );
+
       public:
          [[eosio::action]] void transfer( const account_name& from,
                                           const account_name& to,
