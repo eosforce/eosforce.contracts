@@ -33,7 +33,6 @@ namespace eosio {
       uint32_t section;
       uint32_t takecoin_num;
       uint32_t approve_end_block_num;
-      uint32_t end_block_num;
       vector< vector<char> > extern_data;
 
       uint64_t primary_key()const { return id; }
@@ -79,21 +78,25 @@ namespace eosio {
          ~budget();
 
       public:
-         [[eosio::action]] void handover( vector<account_name> committeers ,string memo);
+         [[eosio::action]] void handover(const vector<account_name>& committeers ,const string& memo);
 
-         [[eosio::action]] void propose( account_name proposer,string title,string content,asset quantity,uint32_t end_num );
+         [[eosio::action]] void propose(const account_name& proposer,const string& title,const string& content,const asset& quantity );
 
-         [[eosio::action]] void approve( account_name approver,uint64_t id ,string memo);
+         [[eosio::action]] void approve(const account_name& approver,const uint64_t& id ,const string& memo);
 
-         [[eosio::action]] void unapprove( account_name approver,uint64_t id ,string memo);
+         [[eosio::action]] void unapprove(const account_name& approver,const uint64_t& id ,const string& memo);
 
-         [[eosio::action]] void takecoin( account_name proposer,uint64_t montion_id,string content,asset quantity );
+         [[eosio::action]] void takecoin(const account_name& proposer,const uint64_t& montion_id,const string& content,const asset& quantity );
 
-         [[eosio::action]] void agreecoin( account_name approver,account_name proposer,uint64_t id ,string memo);
+         [[eosio::action]] void agreecoin(const account_name& approver,const account_name& proposer,const uint64_t& id ,const string& memo);
          
-         [[eosio::action]] void unagreecoin( account_name approver,account_name proposer,uint64_t id ,string memo);
+         [[eosio::action]] void unagreecoin(const account_name& approver,const account_name& proposer,const uint64_t& id ,const string& memo);
 
-         [[eosio::action]] void turndown( uint64_t id ,string memo);
+         [[eosio::action]] void turndown(const uint64_t& id ,const string& memo);
+
+         [[eosio::action]] void closemotion(const uint64_t& id ,const string& memo);
+
+         [[eosio::action]] void closecoin(const account_name& proposer,const uint64_t& id ,const string& memo);
          
    };
 

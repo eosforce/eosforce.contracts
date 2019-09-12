@@ -11,7 +11,7 @@ namespace eosio {
    budget::~budget() {}
 
 
-   void budget::handover( vector<account_name> committeers ,string memo) {
+   void budget::handover(const vector<account_name>& committeers ,const string& memo) {
       require_auth( get_self() );
       committee_table  committee_tbl( get_self(), get_self().value );
       auto committee = committee_tbl.find( EOSIO_BUDGET.value );
@@ -30,7 +30,7 @@ namespace eosio {
       
    }
 
-   void budget::propose( account_name proposer,string title,string content,asset quantity,uint32_t end_num ) {
+   void budget::propose(const account_name& proposer,const string& title,const string& content,const asset& quantity ) {
       require_auth( name{proposer} );
 
       pledges bp_pledge(eosforce::pledge_account,proposer);
@@ -52,7 +52,6 @@ namespace eosio {
          s.section = 0;
          s.takecoin_num = 0;
          s.approve_end_block_num = currnet_block + APPROVE_BLOCK_NUM;
-         s.end_block_num = end_num;
          s.extern_data.clear();
       });
 
@@ -68,7 +67,7 @@ namespace eosio {
 
    }
 
-   void budget::approve( account_name approver,uint64_t id ,string memo) {
+   void budget::approve(const account_name& approver,const uint64_t& id ,const string& memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       motion_table motion_tbl( get_self(), get_self().value );
@@ -97,7 +96,7 @@ namespace eosio {
       }
    }
 
-   void budget::unapprove( account_name approver,uint64_t id ,string memo) {
+   void budget::unapprove(const account_name& approver,const uint64_t& id ,const string& memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       motion_table motion_tbl( get_self(), get_self().value );
@@ -126,7 +125,7 @@ namespace eosio {
       }
    }
 
-   void budget::takecoin( account_name proposer,uint64_t montion_id,string content,asset quantity ) {
+   void budget::takecoin(const account_name& proposer,const uint64_t& montion_id,const string& content,const asset& quantity ) {
       require_auth( name{proposer} );
       pledges bp_pledge(eosforce::pledge_account,proposer);
       auto pledge = bp_pledge.find(eosforce::block_out_pledge.value);
@@ -137,7 +136,6 @@ namespace eosio {
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( montion_id );
       check( montion != motion_tbl.end(), "no motion find");
-      check( montion->end_block_num > currnet_block,"the motion has exceeded the approve deadline" );
       check( montion->approve_end_block_num < currnet_block,"The motion has not passed the publicity period" );
       check( montion->section == 1,"the motion section is not passed" );
       check( montion->proposer == proposer,"the takecoin proposer must be the motion proposer" );
@@ -162,7 +160,7 @@ namespace eosio {
 
    }
 
-   void budget::agreecoin( account_name approver,account_name proposer,uint64_t id ,string memo) {
+   void budget::agreecoin(const account_name& approver,const account_name& proposer,const uint64_t& id ,const string& memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       takecoin_table takecoin_tbl(get_self(),proposer);
@@ -204,7 +202,7 @@ namespace eosio {
 
    }
 
-   void budget::unagreecoin( account_name approver,account_name proposer,uint64_t id ,string memo) {
+   void budget::unagreecoin(const account_name& approver,const account_name& proposer,const uint64_t& id ,const string& memo) {
       require_auth( name{approver} );
       auto currnet_block = current_block_num();
       takecoin_table takecoin_tbl(get_self(),proposer);
@@ -230,7 +228,7 @@ namespace eosio {
       }
    }
 
-   void budget::turndown( uint64_t id ,string memo) {
+   void budget::turndown(const uint64_t& id ,const string& memo) {
       require_auth( get_self() );
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( id );
@@ -241,6 +239,28 @@ namespace eosio {
          });
    }
 
+   void budget::closemotion(const uint64_t& id ,const string& memo) {
+      motion_table motion_tbl( get_self(), get_self().value );
+      auto montion = motion_tbl.find( id );
+      check( montion != motion_tbl.end(), "no motion find");
+
+      require_auth( name{montion->proposer} );
+      motion_tbl.erase(montion);
+
+      approver_table approve_tbl( get_self(), montion->proposer );
+      auto approve_info = approve_tbl.find( id );
+      check(approve_info != approve_tbl.end(),"no approve find");
+      approve_tbl.erase(approve_info);
+   }
+
+   void budget::closecoin(const account_name& proposer,const uint64_t& id ,const string& memo) {
+      require_auth( name{proposer} );
+      takecoin_table takecoin_tbl(get_self(),proposer);
+      auto takecoin_info = takecoin_tbl.find( id );
+      check(takecoin_info != takecoin_tbl.end(),"take coin motion not find");
+
+      takecoin_tbl.erase(takecoin_info);
+   }
 
 
 } /// namespace eosio
