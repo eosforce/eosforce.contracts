@@ -23,7 +23,7 @@ namespace eosio {
    static constexpr uint32_t BLOCK_NUM_PER_DAY     = 24 * 60 * 20;
    static constexpr uint32_t FROZEN_DELAY          = 3 * BLOCK_NUM_PER_DAY;
    static constexpr int NUM_OF_TOP_BPS             = 23;
-   static constexpr int BLOCK_REWARDS_BP           = 27000;
+   static constexpr int BLOCK_REWARD_VOTER           = 25000;                 // reward voter
    static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
    static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
    static constexpr uint32_t BP_CYCLE_BLOCK_OUT    = 1;
@@ -31,13 +31,14 @@ namespace eosio {
    static constexpr uint32_t BLOCK_OUT_WEIGHT_LIMIT = 4800;
    static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9;
    static constexpr uint32_t APPROVE_TO_PUNISH_NUM = 16; 
-   static constexpr uint32_t BLOCK_OUT_REWARD = 0; 
+   static constexpr uint32_t BLOCK_OUT_REWARD = 5000;                         //reward bps for block out
+   static constexpr uint32_t BLOCK_REWARD_BPS_VOTER = 5000;                   //reward bps for vote to
    static constexpr uint32_t PUNISH_BP_LIMIT = 28800; 
    static constexpr uint32_t MIN_CLAIM_BP = 100*10000; 
    static constexpr int BLOCK_REWARDS_B1           = 3000;
    
-   static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;
-   static constexpr uint32_t DRAIN_BLOCK_PUNISH = ( BLOCK_REWARDS_BP + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
+   static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;                     //reward budget
+   static constexpr uint32_t DRAIN_BLOCK_PUNISH = (BLOCK_REWARD_BPS_VOTER + BLOCK_REWARD_VOTER + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
    static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
 
    static constexpr uint32_t WRONG_DRAIN_BLOCK = 10000000;
