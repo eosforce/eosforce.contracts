@@ -17,6 +17,7 @@ namespace eosio {
       check( stake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
       check( 0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
              "need stake quantity >= 0.0000 EOS and quantity is integer" );
+      check( !is_account_freezed( voter, current_block_num() ), "account is freezed by EOSC FIP #11" );
 
       const auto curr_block_num = current_block_num();
 
@@ -80,6 +81,7 @@ namespace eosio {
       check( restake.symbol == CORE_SYMBOL, "only support EOS which has 4 precision" );
       check( restake.amount > 0 && ( restake.amount % CORE_SYMBOL_PRECISION == 0 ),
             "need restake quantity > 0.0000 EOS and quantity is integer" );
+      check( !is_account_freezed( voter, current_block_num() ), "account is freezed by EOSC FIP #11" );
 
       const auto& bpf = _bps.get( frombp, "bpname is not registered" );
       const auto& bpt = _bps.get( tobp, "bpname is not registered" );
@@ -264,6 +266,7 @@ namespace eosio {
       check( stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token" );
       check( 0 < stake.amount && stake.amount % 10000 == 0,
              "need stake quantity >= 0 and quantity is integer" );
+      check( !is_account_freezed( voter, current_block_num() ), "account is freezed by EOSC FIP #11" );
 
       switch ( stake_typ ) {
          case vote_stake_typ::use_account_token:
@@ -333,6 +336,7 @@ namespace eosio {
       check( fitr->bpname != bpname, "from and to cannot same" );
       check( !fitr->is_withdraw, "fix-time vote has withdraw" );
       check( fitr->withdraw_block_num > curr_block_num, "fix-time vote need withdraw, has timeout" );
+      check( !is_account_freezed( voter, current_block_num() ), "account is freezed by EOSC FIP #11" );
 
       check( !is_producer_in_blacklist( bpname ),
              "bp is not active, cannot add stake for vote" );
