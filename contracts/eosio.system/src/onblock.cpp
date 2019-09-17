@@ -205,8 +205,8 @@ namespace eosio {
          }
 
          auto hb = hb_tbl.find( it->name );
-         if(    hb == hb_tbl.end() 
-             || ( hb->timestamp + static_cast<uint32_t>( hb_max ) ) < current_time_sec ) {
+         if(    (hb == hb_tbl.end() 
+             || ( hb->timestamp + static_cast<uint32_t>( hb_max ) ) < current_time_sec) && (is_func_open(eosforce::chain_func::heartbeat)) ) {
             continue;
          }
 
