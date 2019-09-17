@@ -8,7 +8,7 @@ namespace eosio {
    void lock_token::addfreezed( const account_name& committer,
                                 const std::vector<account_name>& freezed_accounts,
                                 const std::string& memo ) {
-      require_auth( committer );
+      require_auth( name{committer} );
 
       check( freezed_accounts.size() <= 256, "freezed account size need <= 256" );
 
@@ -59,7 +59,7 @@ namespace eosio {
    void lock_token::delfreezed( const account_name& committer,
                                 const account_name& del_acc,
                                 const std::string& memo ) {
-      require_auth( committer );
+      require_auth( name{committer} );
 
       global_freezed_state gfstate( get_self(), get_self().value );
       check( ((!gfstate.exists()) || (gfstate.get().committer == 0)),
@@ -93,10 +93,10 @@ namespace eosio {
    void lock_token::lockfreezed( const account_name& committer, const bool is_locked ) {
       if( is_locked ) {
          // lock table just need committer sign
-         require_auth( committer );
+         require_auth( name{committer} );
       } else {
          // unlock need bps multisig
-         require_auth( system_account );
+         require_auth( name{system_account} );
       }
 
       global_freezed_state gfstate( get_self(), get_self().value );
@@ -124,7 +124,7 @@ namespace eosio {
 
    // actfreezed activite freeze account table
    void lock_token::actfreezed( const account_name& committer ) {
-      require_auth( system_account );
+      require_auth( name{system_account} );
 
       global_freezed_state gfstate( get_self(), get_self().value );
       check( ((!gfstate.exists()) || (gfstate.get().committer == 0)),
@@ -149,7 +149,7 @@ namespace eosio {
 
    // confirm a account is active from freeze account table
    void lock_token::confirmact( const account_name& account ) {
-      require_auth( account );
+      require_auth( name{account} );
 
       global_freezed_state gfstate( get_self(), get_self().value );
       check( ((!gfstate.exists()) || (gfstate.get().committer == 0)), "freezed table has activited" );
@@ -166,7 +166,7 @@ namespace eosio {
 
    // actconfirmed activite confirmed account after freeze account table actived
    void lock_token::actconfirmed( const account_name& account ) {
-      require_auth( account );
+      require_auth( name{account} );
 
       global_freezed_state gfstate( get_self(), get_self().value );
       check( gfstate.exists() , "freezed table not activited" );
