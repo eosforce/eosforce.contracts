@@ -290,6 +290,12 @@ namespace eosio {
          }
       }
 
+      auto blockout_weight_limit = BLOCK_OUT_WEIGHT_LIMIT;
+      auto config_info = _systemconfig.find(CONFIG_BLOCK_OUT_WEIGHT_LIMIT.value);
+      if ( config_info != _systemconfig.end() ) {
+         blockout_weight_limit = config_info->number_value;
+      }
+
       uint64_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          // if no monitor_bp record,add one
@@ -351,8 +357,12 @@ namespace eosio {
                s.bp_status = BPSTATUS::LACK_PLEDGE;
             }
             // if consecutive produce block is Multiple of BP_PUBISH_DRAIN_NUM stability add one
-            if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < BLOCK_OUT_WEIGHT_LIMIT) {
+            if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < blockout_weight_limit) {
                s.stability += 1;
+            }
+
+            if ( s.stability > blockout_weight_limit ) {
+               s.stability = blockout_weight_limit;
             }
          });
          // deduction pledge

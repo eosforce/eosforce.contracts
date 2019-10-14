@@ -48,7 +48,13 @@ namespace eosio {
          s.approve_bp.push_back(approver);
       });
 
-      if (punish_bp->approve_bp.size() >= 16) {
+      auto approve_to_punish_num = APPROVE_TO_PUNISH_NUM;
+      auto config_info = _systemconfig.find(CONFIG_APPROVE_TO_PUNISH_NUM.value);
+      if ( config_info != _systemconfig.end() ) {
+         approve_to_punish_num = config_info->number_value;
+      }
+
+      if (punish_bp->approve_bp.size() >= approve_to_punish_num) {
          exec_punish_bp(bpname);
       }
 
@@ -79,7 +85,14 @@ namespace eosio {
             ++approve_bp_num;
          }
       }
-      if (approve_bp_num >= APPROVE_TO_PUNISH_NUM) {
+
+      auto approve_to_punish_num = APPROVE_TO_PUNISH_NUM;
+      auto config_info = _systemconfig.find(CONFIG_APPROVE_TO_PUNISH_NUM.value);
+      if ( config_info != _systemconfig.end() ) {
+         approve_to_punish_num = config_info->number_value;
+      }
+
+      if (approve_bp_num >= approve_to_punish_num) {
          auto monitor_bp = _bpmonitors.find(bpname);
          check( (monitor_bp != _bpmonitors.end()) && (monitor_bp->bp_status == BPSTATUS::LACK_PLEDGE),"the bp can not to be punish" );
          _bpmonitors.modify(monitor_bp,name{0},[&]( bp_monitor& s ) { 
