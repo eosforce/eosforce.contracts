@@ -338,3 +338,11 @@ spec_version: "0.2.0"
 title: bp remove to be punish status
 summary: 'when bp block out ,it can remove its bpstatus from 1 to 0.if the bpstatus is 1 ,the bp can be punished'
 ---
+
+<h1 class="contract">updateconfig</h1>
+
+---
+spec_version: "0.2.0"
+title: update system config on eosio.system
+summary: 'If there is systemconfig, use systemconfig to calculate, otherwise use the default value to calculate'
+---

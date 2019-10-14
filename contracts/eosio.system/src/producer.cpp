@@ -94,7 +94,9 @@ namespace eosio {
       auto cblockreward = br_tbl.find( bp_reward_name.value );
       auto monitor_bp = _bpmonitors.find( bpname );
       if ( cblockreward != br_tbl.end() && monitor_bp != _bpmonitors.end() ) {
-         reward_block = monitor_bp->bock_age * cblockreward->reward_block_out / cblockreward->total_block_age;
+         int128_t reward_amount = static_cast<int128_t>(monitor_bp->bock_age) * static_cast<int128_t>(cblockreward->reward_block_out.amount) / static_cast<int128_t>(cblockreward->total_block_age);
+         reward_block = asset(static_cast<int64_t>(reward_amount),CORE_SYMBOL);
+         //reward_block = monitor_bp->bock_age * cblockreward->reward_block_out / cblockreward->total_block_age;
          check( reward_block < cblockreward->reward_block_out,"need reward_block < total_block_out");
 
          br_tbl.modify( cblockreward, name{0}, [&]( block_reward& s ) { 

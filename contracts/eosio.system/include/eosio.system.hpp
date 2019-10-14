@@ -45,6 +45,9 @@ namespace eosio {
 
    static constexpr uint32_t MAX_LAST_PRODUCER_SIZE = 120; 
 
+   static constexpr auto CONFIG_BLOCK_OUT_WEIGHT_LIMIT = "r.weightl"_n;
+   static constexpr auto CONFIG_APPROVE_TO_PUNISH_NUM = "pun.appnum"_n;
+
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
    static constexpr name bp_reward_name     = "bpreward"_n;
@@ -208,6 +211,14 @@ namespace eosio {
       uint64_t primary_key() const { return name; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.system")]] system_config {
+      name config_name;
+      uint64_t number_value;
+      string string_value;;
+
+      uint64_t primary_key() const { return config_name.value; }
+   };
+
    // system contract tables
    typedef eosio::multi_index<"accounts"_n,    account_info>          accounts_table;
    typedef eosio::multi_index<"votes"_n,       vote_info>             votes_table;
@@ -225,6 +236,7 @@ namespace eosio {
    typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
    typedef eosio::multi_index<"bpsreward"_n,   bps_reward>            bpreward_table;
    typedef eosio::multi_index<"lastproducer"_n,last_producer>         lastproducer_table;
+   typedef eosio::multi_index<"systemconfig"_n,system_config>         sysconfig_table;
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -251,6 +263,7 @@ namespace eosio {
          blackproducer_table _blackproducers;
          bpmonitor_table     _bpmonitors;
          lastproducer_table  _lastproducers;
+         sysconfig_table     _systemconfig;
 
       private:
          // to bps in onblock
@@ -360,6 +373,7 @@ namespace eosio {
 
          [[eosio::action]] void monitorevise( const account_name& bpname );
          [[eosio::action]] void removepunish( const account_name& bpname );
+         [[eosio::action]] void updateconfig( const name& config,const uint64_t &number_value,const string &string_value );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
