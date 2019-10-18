@@ -47,6 +47,7 @@ namespace eosio {
 
    static constexpr auto CONFIG_BLOCK_OUT_WEIGHT_LIMIT = "r.weightl"_n;
    static constexpr auto CONFIG_APPROVE_TO_PUNISH_NUM = "pun.appnum"_n;
+   static constexpr auto CONFIG_RESET_BLOCK_WEIGHT_NUM = "rst.rweightl"_n;
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
