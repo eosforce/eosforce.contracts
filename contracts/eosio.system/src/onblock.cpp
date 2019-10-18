@@ -296,6 +296,12 @@ namespace eosio {
          blockout_weight_limit = config_info->number_value;
       }
 
+      auto reset_block_out_weight_num = 1;
+      auto config_reset_info = _systemconfig.find(CONFIG_RESET_BLOCK_WEIGHT_NUM.value);
+      if ( config_reset_info != _systemconfig.end() ) {
+         reset_block_out_weight_num = config_reset_info->number_value;
+      }
+
       uint64_t total_bp_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          // if no monitor_bp record,add one
@@ -318,7 +324,7 @@ namespace eosio {
          int64_t drain_num = cal_drain_num(is_change_producers,i,ifirst,ilast,monitor_bp->last_block_num,sch->producers[i].amount);
          auto producer_num = sch->producers[i].amount - monitor_bp->last_block_num; 
 
-         if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > 2 ) {
+         if ( drain_num <= 0 && monitor_bp->consecutive_drain_block > reset_block_out_weight_num ) {
             drainblock_table drainblock_tbl( get_self(),sch->producers[i].bpname );
             drainblock_tbl.emplace( get_self(), [&]( drain_block_info& s ) { 
                s.current_block_num = static_cast<uint64_t>(curr_block_num);
@@ -346,7 +352,7 @@ namespace eosio {
                s.consecutive_drain_block += drain_num;
                s.total_drain_block += drain_num;
                s.consecutive_produce_block = 0;
-               s.stability = BASE_BLOCK_OUT_WEIGHT;
+               //s.stability = BASE_BLOCK_OUT_WEIGHT;
             }
             else {
                s.consecutive_drain_block = 0;
@@ -359,6 +365,10 @@ namespace eosio {
             // if consecutive produce block is Multiple of BP_PUBISH_DRAIN_NUM stability add one
             if ( (s.consecutive_produce_block + 1) % BP_PUBISH_DRAIN_NUM == 0 && s.stability < blockout_weight_limit) {
                s.stability += 1;
+            }
+
+            if (s.consecutive_drain_block > reset_block_out_weight_num) {
+               s.stability = BASE_BLOCK_OUT_WEIGHT;
             }
 
             if ( s.stability > blockout_weight_limit ) {
