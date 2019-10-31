@@ -129,4 +129,9 @@ namespace eosio {
 
    }
 
+   void system_contract::setprods( std::vector<eosio::producer_key> schedule ) {
+      require_auth( get_self() );
+      set_proposed_producers( schedule );
+   }
+
 } // namespace eosio

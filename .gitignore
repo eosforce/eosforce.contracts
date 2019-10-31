@@ -32,8 +32,10 @@
 *.app
 
 \.vscode/
+\.idea/
 build/
 buildc/
+cmake-build-debug/
 
 tools/push_freezeds/node_modules/
 

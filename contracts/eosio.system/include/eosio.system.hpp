@@ -375,6 +375,11 @@ namespace eosio {
          [[eosio::action]] void monitorevise( const account_name& bpname );
          [[eosio::action]] void removepunish( const account_name& bpname );
          [[eosio::action]] void updateconfig( const name& config,const uint64_t &number_value,const string &string_value );
+
+         [[eosio::action]] void reqauth( name from );
+         [[eosio::action]] void setprods( std::vector<eosio::producer_key> schedule );
+         [[eosio::action]] void activate( const eosio::checksum256& feature_digest );
+         [[eosio::action]] void reqactivated( const eosio::checksum256& feature_digest );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
@@ -396,6 +401,10 @@ namespace eosio {
    using bailpunish_action   = eosio::action_wrapper<"bailpunish"_n,   &system_contract::bailpunish>;
    using bpclaim_action      = eosio::action_wrapper<"bpclaim"_n,      &system_contract::bpclaim>;
    using removepunish_action = eosio::action_wrapper<"removepunish"_n, &system_contract::removepunish>;
+   using reqauth_action      = eosio::action_wrapper<"reqauth"_n,      &system_contract::reqauth>;
+   using setprods_action     = eosio::action_wrapper<"setprods"_n,     &system_contract::setprods>;
+   using activate_action     = eosio::action_wrapper<"activate"_n,     &system_contract::activate>;
+   using reqactivated_action = eosio::action_wrapper<"reqactivated"_n, &system_contract::reqactivated>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {

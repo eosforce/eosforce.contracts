@@ -35,4 +35,8 @@ namespace eosio {
          });
       }
    }
+
+   void system_contract::reqauth( name from ) {
+      require_auth( from );
+   }
 } /// namespace eosio

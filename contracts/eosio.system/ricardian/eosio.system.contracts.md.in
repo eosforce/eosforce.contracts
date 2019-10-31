@@ -346,3 +346,35 @@ spec_version: "0.2.0"
 title: update system config on eosio.system
 summary: 'If there is systemconfig, use systemconfig to calculate, otherwise use the default value to calculate'
 ---
+
+<h1 class="contract">reqauth</h1>
+
+---
+spec_version: "0.2.0"
+title: Assert Authorization
+summary: 'Assert that authorization by {{nowrap from}} is provided'
+---
+
+<h1 class="contract">setprods</h1>
+
+---
+spec_version: "0.2.0"
+title: Set Block Producers
+summary: 'Set block producer schedule'
+---
+
+<h1 class="contract">activate</h1>
+
+---
+spec_version: "0.2.0"
+title: Activate Protocol Feature
+summary: 'Activate protocol feature {{nowrap feature_digest}}'
+---
+
+<h1 class="contract">reqactivated</h1>
+
+---
+spec_version: "0.2.0"
+title: Assert Protocol Feature Activation
+summary: 'Assert that protocol feature {{nowrap feature_digest}} has been activated'
+---
