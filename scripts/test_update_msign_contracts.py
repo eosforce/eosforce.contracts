@@ -16,9 +16,6 @@ wallet_password = ''
 wallet_name = 'testc'
 active_account = 'testc'
 
-proposal_name_upsyscode = 'p.upsyscode'
-proposal_name_upsysabi = 'p.upsysabi'
-
 # eosio system contract code in wasm
 wasm_path = '../build/contracts/eosio.system/eosio.system.wasm'
 abi_path = '../build/contracts/eosio.system/eosio.system.abi'
@@ -70,29 +67,42 @@ def getbps():
     return bpsa
 
 # msig to update system contract code
-def msigProposeUpdateSystem(proposer, pname, bps, wasmpath, expirehours):
-    requestedPermissions = []
-    for i in range(0, len(bps)):
-        requestedPermissions.append({'actor': bps[i], 'permission': 'active'})
-    trxPermissions = [{'actor': 'eosio', 'permission': 'active'}]
-
+def mkUpdateSystemActionDatas( wasmpath ):
     with open(wasmpath, mode='rb') as f:
         setcode = {'account': 'eosio', 'vmtype': 0, 'vmversion': 0, 'code': f.read().hex()}
-    run(cleos + 'multisig propose ' + pname + jsonArg(requestedPermissions) + jsonArg(
-        trxPermissions) + 'eosio setcode' + jsonArg(
-        setcode) + ' ' + proposer + ' ' + str(expirehours) + ' -p ' + proposer)
+    return setcode
+
 
 # msig to update system contract abi
-def msigProposeUpdateSystemAbi(proposer, pname, bps, abidata, expirehours):
+def mkUpdateSystemAbiActionDatas( abi_path ):
+    return {
+        "account": "eosio",
+        "abi": getAbiData(abi_path)
+    }
+
+def dumpActionData( contract, action_name, datas ):
+    flie_name = './%s.%s.json' % (contract, action_name)
+    run(('rm -rf %s' % (flie_name)))
+    with open(flie_name, mode='w') as f:
+        f.write(json.dumps(datas))
+
+def mkAction( wasm_path, abi_path ):
+    dumpActionData( 'eosio', 'setcode', mkUpdateSystemActionDatas(wasm_path) )
+    dumpActionData( 'eosio', 'setabi', mkUpdateSystemAbiActionDatas(abi_path) )
+
+# msig to update system contract abi
+def execMultisig(proposer, bps):
+    expirehours = tx_expire_hours
     requestedPermissions = []
     for i in range(0, len(bps)):
         requestedPermissions.append({'actor': bps[i], 'permission': 'active'})
     trxPermissions = [{'actor': 'eosio', 'permission': 'active'}]
 
-    data = {'account': 'eosio', 'abi': abidata}
-    run(cleos + 'multisig propose ' + pname + jsonArg(requestedPermissions) +
-        jsonArg(trxPermissions) + 'eosio setabi' + jsonArg(
-        data) + ' ' + proposer + ' ' + str(expirehours) + ' -p ' + proposer)
+    run(cleos + 'multisig propose p.upsysabi' + jsonArg(requestedPermissions) +
+        jsonArg(trxPermissions) + ' eosio setabi ./eosio.setabi.json ' + proposer + ' ' + str(expirehours) + ' -p ' + proposer)
+
+    run(cleos + 'multisig propose p.upsyscode' + jsonArg(requestedPermissions) +
+        jsonArg(trxPermissions) + ' eosio setcode ./eosio.setcode.json ' + proposer + ' ' + str(expirehours) + ' -p ' + proposer)
 
 # ---------------------------------------------------------------------------------------------------
 # msig to update system contract
@@ -104,11 +114,5 @@ runone(unlockwallet_str)
 run(cleos + ('transfer %s eosio "1000.0000 EOS" ""' % (active_account)))
 run(cleos + ('push action eosio vote4ram \'{"voter":"%s","bpname":"biosbpa","stake":"5000.0000 EOS"}\' -p %s' % (active_account, active_account)))
 
-# get schedule active bps
-active_bps = getbps()
-
-# msig to setcode of eosio
-msigProposeUpdateSystem(active_account, proposal_name_upsyscode, active_bps, wasm_path, tx_expire_hours)
-
-# msig to setabi of eosio
-msigProposeUpdateSystemAbi(active_account, proposal_name_upsysabi, active_bps, getAbiData(abi_path), tx_expire_hours)
+mkAction( wasm_path, abi_path )
+execMultisig(active_account, getbps())

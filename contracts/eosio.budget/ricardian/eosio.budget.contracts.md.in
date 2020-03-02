@@ -1,0 +1,74 @@
+<h1 class="contract">handover</h1>
+
+---
+spec_version: "0.2.0"
+title: hand over the member of Committee
+summary: 'clear the former member of the committee and add new member of the committee'
+---
+
+<h1 class="contract">propose</h1>
+
+---
+spec_version: "0.2.0"
+title: Add a new proposal 
+summary: 'user can add a new propose with this action'
+---
+
+<h1 class="contract">approve</h1>
+
+---
+spec_version: "0.2.0"
+title: pass a proposal 
+summary: 'the member of the committee use this to pass a proposal'
+---
+
+<h1 class="contract">unapprove</h1>
+
+---
+spec_version: "0.2.0"
+title: Reject a proposal
+summary: 'the member of the committee use this to reject a proposal'
+---
+
+<h1 class="contract">takecoin</h1>
+
+---
+spec_version: "0.2.0"
+title: add a take coin motion
+summary: 'user can add a takecoin motion with this action'
+---
+
+<h1 class="contract">agreecoin</h1>
+
+---
+spec_version: "0.2.0"
+title: pass a take coin proposal
+summary: 'the member of the committee use this to pass a take coin proposal'
+---
+
+<h1 class="contract">unagreecoin</h1>
+
+---
+spec_version: "0.2.0"
+title: Reject a take coin proposal
+summary: 'the member of the committee use this to reject a take coin proposal'
+---
+
+<h1 class="contract">turndown</h1>
+
+---
+spec_version: "0.2.0"
+title: trun down a motion
+summary: 'the contract can turn down the motion'
+---
+
+
+
+
+
+
+
+
+
+
+

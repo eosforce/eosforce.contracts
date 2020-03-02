@@ -8,26 +8,62 @@
 #include <string>
 
 #include <eosforce/assetage.hpp>
-#include <native.hpp>
+#include "native.hpp"
+#include "vote.hpp"
 
 namespace eosio {
 
    using std::string;
+   using std::vector;
 
    using eosforce::assetage;
    using eosforce::CORE_SYMBOL;
    using eosforce::CORE_SYMBOL_PRECISION;
 
-   static constexpr uint32_t BLOCK_NUM_PER_DAY = 24 * 60 * 20;
-   static constexpr uint32_t FROZEN_DELAY      = 3 * BLOCK_NUM_PER_DAY;
-   static constexpr int NUM_OF_TOP_BPS         = 23;
-   static constexpr int BLOCK_REWARDS_BP       = 27000;
-   static constexpr int BLOCK_REWARDS_B1       = 3000;
-   static constexpr uint32_t UPDATE_CYCLE      = NUM_OF_TOP_BPS * 5; // every num blocks update
-   static constexpr uint32_t REWARD_B1_CYCLE   = NUM_OF_TOP_BPS * 100;
+   static constexpr uint32_t BLOCK_NUM_PER_DAY     = 24 * 60 * 20;
+   static constexpr uint32_t FROZEN_DELAY          = 3 * BLOCK_NUM_PER_DAY;
+   static constexpr int NUM_OF_TOP_BPS             = 23;
+   static constexpr int BLOCK_REWARD_VOTER           = 25000;                 // reward voter
+   static constexpr uint32_t UPDATE_CYCLE          = NUM_OF_TOP_BPS * 5;     // every num blocks update
+   static constexpr uint32_t REWARD_B1_CYCLE       = NUM_OF_TOP_BPS * 100;
+   static constexpr uint32_t BP_CYCLE_BLOCK_OUT    = 1;
+   static constexpr uint32_t BASE_BLOCK_OUT_WEIGHT = 1000;
+   static constexpr uint32_t BLOCK_OUT_WEIGHT_LIMIT = 4800;
+   static constexpr uint32_t BP_PUBISH_DRAIN_NUM = 9;
+   static constexpr uint32_t APPROVE_TO_PUNISH_NUM = 16; 
+   static constexpr uint32_t BLOCK_OUT_REWARD = 5000;                         //reward bps for block out
+   static constexpr uint32_t BLOCK_REWARD_BPS_VOTER = 5000;                   //reward bps for vote to
+   static constexpr uint32_t PUNISH_BP_LIMIT = 28800; 
+   static constexpr uint32_t MIN_CLAIM_BP = 100*10000; 
+   static constexpr int BLOCK_REWARDS_B1           = 3000;
+   
+   static constexpr uint32_t BLOCK_BUDGET_REWARD = 15000;                     //reward budget
+   static constexpr uint32_t DRAIN_BLOCK_PUNISH = (BLOCK_REWARD_BPS_VOTER + BLOCK_REWARD_VOTER + BLOCK_OUT_REWARD + BLOCK_BUDGET_REWARD ) * 2; 
+   static constexpr uint32_t BASE_BLOCK_OUT_PLEDGE = DRAIN_BLOCK_PUNISH * PUNISH_BP_LIMIT / NUM_OF_TOP_BPS ; 
+
+   static constexpr uint32_t WRONG_DRAIN_BLOCK = 10000000;
+
+   static constexpr uint32_t MAX_LAST_PRODUCER_SIZE = 120; 
+
+   static constexpr auto CONFIG_BLOCK_OUT_WEIGHT_LIMIT = "r.weightl"_n;
+   static constexpr auto CONFIG_APPROVE_TO_PUNISH_NUM = "pun.appnum"_n;
+   static constexpr auto CONFIG_RESET_BLOCK_WEIGHT_NUM = "rst.rweightl"_n;
 
    static constexpr name eosforce_vote_stat = "eosforce"_n;
    static constexpr name chainstatus_name   = "chainstatus"_n;
+   static constexpr name bp_reward_name     = "bpreward"_n;
+   static constexpr name bp_producer_name   = "bpproducer"_n;
+
+   enum BPSTATUS : uint32_t { 
+      NORMAL = 0,
+      LACK_PLEDGE,
+      PUNISHED
+   };
+
+   enum vote_stake_typ : uint32_t {
+      use_account_token   = 1,
+      use_unstaking_token = 2
+   };
 
    // tables
    struct [[eosio::table, eosio::contract("eosio.system")]] account_info {
@@ -112,10 +148,76 @@ namespace eosio {
    };
 
    struct [[eosio::table, eosio::contract("eosio.system")]] heartbeat_info {
-      account_name   bpname;
-      time_point_sec timestamp;
+      account_name            bpname;
+      time_point_sec          timestamp;
 
       uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] block_reward {
+      account_name   name    = bp_reward_name.value;
+      account_name   last_standard_bp;
+      asset          reward_block_out;
+      asset          reward_budget;
+
+      uint64_t       total_block_age;
+      uint32_t       last_reward_block_num;
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] bp_monitor {
+      account_name bpname;
+      uint32_t       last_block_num;               //The number of blocks in the previous round
+      uint32_t       consecutive_drain_block;      // Number of consecutive drain blocks
+      uint32_t       consecutive_produce_block;    // Number of consecutive produce blocks
+      uint32_t       total_drain_block;            // Number of total drain blocks
+      uint32_t       stability;
+      uint64_t       bock_age;
+      uint32_t       bp_status;
+      uint32_t       end_punish_block;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] drain_block_info {
+      uint64_t       current_block_num;
+      uint32_t       drain_block_num;
+
+      uint64_t primary_key() const { return current_block_num; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] punish_bp_info {
+      account_name punish_bp_name;
+      account_name proposaler;
+      vector<account_name> approve_bp;
+      uint32_t     effective_block_num;
+
+      uint64_t primary_key() const { return punish_bp_name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] bps_reward {
+      account_name   bpname;
+      asset          reward;
+
+      uint64_t primary_key() const { return bpname; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] last_producer {
+      account_name   name;
+      uint32_t next_index;
+      uint32_t max_size;
+      std::vector<account_name> producers;
+
+      uint64_t primary_key() const { return name; }
+   };
+
+   struct [[eosio::table, eosio::contract("eosio.system")]] system_config {
+      name config_name;
+      uint64_t number_value;
+      string string_value;;
+
+      uint64_t primary_key() const { return config_name.value; }
    };
 
    // system contract tables
@@ -129,7 +231,13 @@ namespace eosio {
    typedef eosio::multi_index<"heartbeat"_n,   heartbeat_info>        hb_table;
    typedef eosio::multi_index<"blackpro"_n,    producer_blacklist>    blackproducer_table;
    typedef eosio::multi_index<"gvotestat"_n,   global_votestate_info> global_votestate_table;
-
+   typedef eosio::multi_index<"blockreward"_n, block_reward>          blockreward_table;
+   typedef eosio::multi_index<"bpmonitor"_n,   bp_monitor>            bpmonitor_table;
+   typedef eosio::multi_index<"drainblocks"_n, drain_block_info>      drainblock_table;
+   typedef eosio::multi_index<"punishbps"_n,   punish_bp_info>        punishbp_table;
+   typedef eosio::multi_index<"bpsreward"_n,   bps_reward>            bpreward_table;
+   typedef eosio::multi_index<"lastproducer"_n,last_producer>         lastproducer_table;
+   typedef eosio::multi_index<"systemconfig"_n,system_config>         sysconfig_table;
    /**
     * @defgroup system_contract eosio.system
     * @ingroup eosiocontracts
@@ -154,6 +262,9 @@ namespace eosio {
          accounts_table      _accounts;
          bps_table           _bps;
          blackproducer_table _blackproducers;
+         bpmonitor_table     _bpmonitors;
+         lastproducer_table  _lastproducers;
+         sysconfig_table     _systemconfig;
 
       private:
          // to bps in onblock
@@ -161,6 +272,11 @@ namespace eosio {
          void reward_bps( const std::vector<name>& block_producers,
                           const uint32_t curr_block_num,
                           const time_point_sec& current_time_sec );
+
+         void reward_block(const uint32_t curr_block_num,
+                           const account_name& bpname,
+                           const uint32_t schedule_version,
+                           const bool is_change_producers);
 
          template< typename VOTE_TYP >
          int64_t vote_by_typ_imp( const account_name& voter,
@@ -174,8 +290,21 @@ namespace eosio {
          inline const global_votestate_info get_global_votestate( const uint32_t curr_block_num );
          inline void make_global_votestate( const uint32_t curr_block_num );
          inline void on_change_total_staked( const uint32_t curr_block_num, const int64_t& deta );
-         inline void heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp );
+         inline void heartbeat_imp( const account_name& bpname,
+                                    const uint32_t& curr_block_num,
+                                    const time_point_sec& timestamp );
          inline bool is_producer_in_blacklist( const account_name& bpname ) const;
+         inline bool is_producer_in_punished( const account_name& bpname ) const;
+
+         bool is_super_bp( const account_name &bpname ) const;
+         void exec_punish_bp( const account_name &bpname );
+
+         bool is_reward_block(const bool &is_change_sch,const uint32_t &block_amount,const account_name &bpname);
+         int32_t cal_drain_num(const bool &is_change_sch,const uint32_t index,const uint32_t &ifirst,const uint32_t &ilast,const uint32_t &pre_block_amount,const uint32_t &current_block_amount);
+
+         int32_t drainblock_revise(const account_name &bpname);
+
+         bool is_account_freezed( const account_name& account, const uint32_t curr_block_num );
 
       public:
          [[eosio::action]] void transfer( const account_name& from,
@@ -205,6 +334,22 @@ namespace eosio {
 
          [[eosio::action]] void unfreezeram( const account_name& voter, const account_name& bpname );
 
+         // make a fix-time vote by voter to bpname with stake token
+         // type is fix-time type, 
+         [[eosio::action]] void votefix( const account_name& voter,
+                                         const account_name& bpname,
+                                         const name& type,
+                                         const asset& stake,
+                                         const uint32_t& stake_typ );
+
+         [[eosio::action]] void revotefix( const account_name& voter,
+                                           const uint64_t& key,
+                                           const account_name& bpname );
+
+         // take out stake to a fix-time vote by voter after vote is timeout
+         [[eosio::action]] void outfixvote( const account_name& voter,
+                                            const uint64_t& key );
+
          [[eosio::action]] void claim( const account_name& voter, const account_name& bpname );
 
          [[eosio::action]] void onblock( const block_timestamp& timestamp,
@@ -221,6 +366,15 @@ namespace eosio {
                                            const time_point_sec& timestamp );
 
          [[eosio::action]] void removebp( const account_name& bpname );
+         [[eosio::action]] void punishbp( const account_name& bpname,const account_name& proposaler );
+         [[eosio::action]] void approvebp( const account_name& bpname,const account_name& approver );
+         [[eosio::action]] void bailpunish( const account_name& bpname );
+
+         [[eosio::action]] void bpclaim( const account_name& bpname );
+
+         [[eosio::action]] void monitorevise( const account_name& bpname );
+         [[eosio::action]] void removepunish( const account_name& bpname );
+         [[eosio::action]] void updateconfig( const name& config,const uint64_t &number_value,const string &string_value );
    };
 
    using transfer_action     = eosio::action_wrapper<"transfer"_n,     &system_contract::transfer>;
@@ -234,6 +388,14 @@ namespace eosio {
    using setemergency_action = eosio::action_wrapper<"setemergency"_n, &system_contract::setemergency>;
    using heartbeat_action    = eosio::action_wrapper<"heartbeat"_n,    &system_contract::heartbeat>;
    using removebp_action     = eosio::action_wrapper<"removebp"_n,     &system_contract::removebp>;
+   using votefix_action      = eosio::action_wrapper<"votefix"_n,      &system_contract::votefix>;
+   using revotefix_action    = eosio::action_wrapper<"revotefix"_n,    &system_contract::revotefix>;
+   using outfixvote_action   = eosio::action_wrapper<"outfixvote"_n,   &system_contract::outfixvote>;
+   using punishbp_action     = eosio::action_wrapper<"punishbp"_n,     &system_contract::punishbp>;
+   using approvebp_action    = eosio::action_wrapper<"approvebp"_n,    &system_contract::approvebp>;
+   using bailpunish_action   = eosio::action_wrapper<"bailpunish"_n,   &system_contract::bailpunish>;
+   using bpclaim_action      = eosio::action_wrapper<"bpclaim"_n,      &system_contract::bpclaim>;
+   using removepunish_action = eosio::action_wrapper<"removepunish"_n, &system_contract::removepunish>;
 
    // for bp_info, cannot change it table struct
    inline void bp_info::add_total_staked( const uint32_t curr_block_num, const asset& s ) {
@@ -292,7 +454,9 @@ namespace eosio {
       } );
    }
 
-   inline void system_contract::heartbeat_imp( const account_name& bpname, const time_point_sec& timestamp ) {
+   inline void system_contract::heartbeat_imp( const account_name& bpname,
+                                               const uint32_t& curr_block_num,
+                                               const time_point_sec& timestamp ) {
       hb_table hb_tbl( _self, _self.value );
 
       const auto hb_itr = hb_tbl.find( bpname );
@@ -302,7 +466,9 @@ namespace eosio {
             hb.timestamp = timestamp;
          } );
       } else {
-         hb_tbl.modify( hb_itr, name{}, [&]( heartbeat_info& hb ) { hb.timestamp = timestamp; } );
+         hb_tbl.modify( hb_itr, name{ bpname }, [&]( heartbeat_info& hb ) {
+            hb.timestamp = timestamp;
+         } );
       }
    }
 
@@ -310,5 +476,11 @@ namespace eosio {
       const auto itr = _blackproducers.find( bpname );
       // Note isactive is false mean bp is ban
       return itr != _blackproducers.end() && ( !itr->isactive );
+   }
+
+   inline bool system_contract::is_producer_in_punished( const account_name& bpname ) const {
+      const auto itr = _bpmonitors.find( bpname );
+      // Note bp_status is 2 mean bp is punished
+      return itr != _bpmonitors.end() && ( itr->bp_status == BPSTATUS::PUNISHED );
    }
 } // namespace eosio
