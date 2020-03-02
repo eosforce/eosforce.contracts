@@ -138,7 +138,7 @@ namespace eosio {
       motion_table motion_tbl( get_self(), get_self().value );
       auto montion = motion_tbl.find( montion_id );
       check( montion != motion_tbl.end(), "no motion find");
-      //check( montion->approve_end_block_num < currnet_block,"The motion has not passed the publicity period" );
+      check( montion->approve_end_block_num < currnet_block,"The motion has not passed the publicity period" );
       check( montion->section == 1,"the motion section is not passed" );
       check( montion->proposer == proposer,"the takecoin proposer must be the motion proposer" );
       check( montion->quantity.symbol == quantity.symbol,"the symbol should be the same with motion quantity symbol");
