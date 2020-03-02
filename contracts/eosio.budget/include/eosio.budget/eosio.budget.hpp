@@ -71,7 +71,7 @@ namespace eosio {
    struct [[eosio::table, eosio::contract("eosio.budget")]] budget_config {
       name config_name;
       uint64_t number_value;
-      string string_value;;
+      string string_value;
 
       uint64_t primary_key() const { return config_name.value; }
    };
@@ -96,7 +96,7 @@ namespace eosio {
          budgetconfig_table     _budgetconfig;
 
          inline uint64_t get_num_config( const name& config,uint64_t default_value);
-         inline string get_string_config( const name& config,string default_value);
+         inline string get_string_config( const name& config,string& default_value);
 
       public:
          [[eosio::action]] void handover(const vector<account_name>& committeers ,const string& memo);

@@ -295,7 +295,7 @@ namespace eosio {
        
    }
 
-   string budget::get_string_config( const name& config,string default_value){
+   string budget::get_string_config( const name& config,string& default_value){
       auto config_info = _budgetconfig.find(config.value);
       if ( config_info == _budgetconfig.end() ) {
          return default_value;
