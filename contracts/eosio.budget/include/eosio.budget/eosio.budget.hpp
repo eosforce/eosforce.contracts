@@ -62,12 +62,21 @@ namespace eosio {
       uint64_t primary_key()const { return id; }
    };
 
+   struct [[eosio::table, eosio::contract("eosio.budget")]] budget_config {
+      name config_name;
+      uint64_t number_value;
+      string string_value;;
+
+      uint64_t primary_key() const { return config_name.value; }
+   };
+
    typedef eosio::multi_index<"committee"_n,   committee_info> committee_table;
    typedef eosio::multi_index<"motions"_n,   motion_info,
       indexed_by< "byroot"_n,
                   eosio::const_mem_fun<motion_info, uint64_t, &motion_info::get_root_id >>> motion_table;
    typedef eosio::multi_index<"approvers"_n,   approval_info> approver_table;
    typedef eosio::multi_index<"takecoins"_n,   takecoin_motion_info> takecoin_table;
+   typedef eosio::multi_index<"budgetconfig"_n,   budget_config> budgetconfig_table;
 
    class [[eosio::contract("eosio.budget")]] budget : public contract {
       public:
@@ -76,6 +85,9 @@ namespace eosio {
          budget( name s, name code, datastream<const char*> ds );
          budget( const budget& ) = default;
          ~budget();
+
+      private:
+         budgetconfig_table     _budgetconfig;
 
       public:
          [[eosio::action]] void handover(const vector<account_name>& committeers ,const string& memo);
@@ -98,6 +110,7 @@ namespace eosio {
 
          [[eosio::action]] void closecoin(const account_name& proposer,const uint64_t& id ,const string& memo);
          
+         [[eosio::action]] void updateconfig( const name& config,const uint64_t &number_value,const string &string_value );
    };
 
 } /// namespace eosio

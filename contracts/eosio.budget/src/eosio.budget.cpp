@@ -6,7 +6,7 @@ namespace eosio {
 
    budget::budget( name s, name code, datastream<const char*> ds ) 
    : contract( s, code, ds )
-      {}
+      , _budgetconfig( get_self(), get_self().value ){}
 
    budget::~budget() {}
 
@@ -262,5 +262,23 @@ namespace eosio {
       takecoin_tbl.erase(takecoin_info);
    }
 
+   void budget::updateconfig( const name& config,const uint64_t &number_value,const string &string_value ) {
+      require_auth( get_self() );
+
+      auto config_info = _budgetconfig.find(config.value);
+      if ( config_info == _budgetconfig.end() ) {
+         _budgetconfig.emplace( get_self(), [&]( auto& s ) { 
+            s.config_name = config;
+            s.number_value = number_value;
+            s.string_value = string_value;
+         });
+      }
+      else {
+         _budgetconfig.modify( config_info,name{}, [&]( auto& s ) { 
+            s.number_value = number_value;
+            s.string_value = string_value;
+         });
+      }
+   }
 
 } /// namespace eosio
