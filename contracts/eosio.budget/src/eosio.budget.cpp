@@ -6,7 +6,7 @@ namespace eosio {
 
    budget::budget( name s, name code, datastream<const char*> ds ) 
    : contract( s, code, ds )
-      {}
+      , _budgetconfig( get_self(), get_self().value ){}
 
    budget::~budget() {}
 
@@ -40,6 +40,8 @@ namespace eosio {
 
       motion_table motion_tbl( get_self(), get_self().value );
 
+      auto propose_approve_num = get_num_config(CONFIG_PROPOSER_APPROVE_BLOCK_NUM,DEFAULT_PROPOSER_APPROVE_BLOCK_NUM);
+
       auto currnet_block = current_block_num();
       auto id_temp = motion_tbl.available_primary_key();
       motion_tbl.emplace( name{proposer} ,[&]( auto& s ) { 
@@ -51,7 +53,7 @@ namespace eosio {
          s.proposer = proposer;
          s.section = 0;
          s.takecoin_num = 0;
-         s.approve_end_block_num = currnet_block + APPROVE_BLOCK_NUM;
+         s.approve_end_block_num = currnet_block + propose_approve_num;
          s.extern_data.clear();
       });
 
@@ -146,6 +148,8 @@ namespace eosio {
       auto committee = committee_tbl.find( EOSIO_BUDGET.value );
       check( committee != committee_tbl.end(),"the committee do not exist" );
 
+      auto takecoin_approve_num = get_num_config(CONFIG_TAKECOIN_APPROVE_BLOCK_NUM,DEFAULT_TAKECOIN_APPROVE_BLOCK_NUM);
+
       takecoin_table takecoin_tbl(get_self(),proposer);
       takecoin_tbl.emplace( name{proposer} ,[&]( auto& s ) { 
          s.id = takecoin_tbl.available_primary_key();
@@ -153,7 +157,7 @@ namespace eosio {
          s.content = content;
          s.quantity = quantity;
          s.receiver = proposer;
-         s.end_block_num = currnet_block + APPROVE_BLOCK_NUM;
+         s.end_block_num = currnet_block + takecoin_approve_num;
          s.requested.assign( committee->member.begin() , committee->member.end() );
          s.section = 0; 
       });
@@ -262,5 +266,43 @@ namespace eosio {
       takecoin_tbl.erase(takecoin_info);
    }
 
+   void budget::updateconfig( const name& config,const uint64_t &number_value,const string &string_value ) {
+      require_auth( get_self() );
+
+      auto config_info = _budgetconfig.find(config.value);
+      if ( config_info == _budgetconfig.end() ) {
+         _budgetconfig.emplace( get_self(), [&]( auto& s ) { 
+            s.config_name = config;
+            s.number_value = number_value;
+            s.string_value = string_value;
+         });
+      }
+      else {
+         _budgetconfig.modify( config_info,name{}, [&]( auto& s ) { 
+            s.number_value = number_value;
+            s.string_value = string_value;
+         });
+      }
+   }
+
+   uint64_t budget::get_num_config( const name& config,uint64_t default_value){
+      auto config_info = _budgetconfig.find(config.value);
+      if ( config_info == _budgetconfig.end() ) {
+         return default_value;
+      }
+       
+       return config_info->number_value;
+       
+   }
+
+   string budget::get_string_config( const name& config,string& default_value){
+      auto config_info = _budgetconfig.find(config.value);
+      if ( config_info == _budgetconfig.end() ) {
+         return default_value;
+      }
+       
+       return config_info->string_value;
+       
+   }
 
 } /// namespace eosio
