@@ -16,6 +16,12 @@ namespace eosio {
    static constexpr int64_t APPROVE_BLOCK_NUM = 14 * 28800;
    static constexpr uint32_t MIN_BUDGET_PLEDGE = 100*10000;
 
+   static constexpr int64_t  DEFAULT_PROPOSER_APPROVE_BLOCK_NUM = 7*28800;
+   static constexpr int64_t  DEFAULT_TAKECOIN_APPROVE_BLOCK_NUM = 7*28800;
+
+   static constexpr auto CONFIG_PROPOSER_APPROVE_BLOCK_NUM = "n.proposer"_n;
+   static constexpr auto CONFIG_TAKECOIN_APPROVE_BLOCK_NUM = "n.takecoin"_n;
+
    struct [[eosio::table, eosio::contract("eosio.budget")]] committee_info {
       name    budget_name    = EOSIO_BUDGET;
       vector<account_name> member;
@@ -88,6 +94,9 @@ namespace eosio {
 
       private:
          budgetconfig_table     _budgetconfig;
+
+         inline uint64_t get_num_config( const name& config,uint64_t default_value);
+         inline string get_string_config( const name& config,string default_value);
 
       public:
          [[eosio::action]] void handover(const vector<account_name>& committeers ,const string& memo);
