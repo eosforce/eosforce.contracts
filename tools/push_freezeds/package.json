@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "eosforcejs2": "^0.1.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "util": "^0.12.1"
   }
 }
